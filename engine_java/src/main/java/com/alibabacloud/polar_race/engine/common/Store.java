@@ -19,12 +19,14 @@ public class Store{
             byte[] key = new byte[8];
             while (store.keyFile.read(key) != -1) {
                 byte[] bytes = new byte[8];
+
                 store.keyFile.read(bytes);
                 long tmpLong = 0;
                 for (int i = 0; i < 8; i++) {
                     tmpLong <<= 8;
                     tmpLong |= (bytes[i] & 0xff);
                 }
+
                 store.start.put(key, tmpLong);
             }
         }
@@ -50,15 +52,16 @@ public class Store{
         RandomAccessFile f = valueMap.get(keyHash);
         synchronized (f) {
             start.put(key, f.length());
+            System.out.println(key[0]);
+            System.out.println(key.hashCode());
             f.write(value);
-            byte len = (byte) (key.length + 8);
-            byte[] newKey = new byte[len];
-            for (int i = 0; i < len; i++) {
+            byte[] newKey = new byte[16];
+            for (int i = 0; i < 8; i++) {
                 newKey[i] = key[i];
             }
             for (int i = 0; i < 8; i++) {
                 int offset = 64 - (i + 1) * 8;
-                newKey[key.length + 1 + i] = (byte) ((f.length() >> offset) & 0xff);
+                newKey[8 + i] = (byte) ((f.length() >> offset) & 0xff);
             }
             synchronized (keyFile) {
                 keyFile.write(newKey);
@@ -72,6 +75,10 @@ public class Store{
             valueMap.put(keyHash, f);
         }
         RandomAccessFile f = valueMap.get(keyHash);
+        //System.out.println(start.containsKey(key));
+        System.out.println(key[0]);
+        System.out.println(key.hashCode());
+        for (int i = 0; i <=)
         long tmpLong = start.get(key);
         byte[] value = new byte[4 * 1024];
         synchronized (f){

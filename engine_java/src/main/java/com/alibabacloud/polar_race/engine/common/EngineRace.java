@@ -33,7 +33,7 @@ public class EngineRace extends AbstractEngine {
 	public byte[] read(byte[] key) throws EngineException {
 		byte[] value = null;
 		try {
-			store.read(key);
+			value = store.read(key);
 		}
 		catch (Exception e) {
 		}
