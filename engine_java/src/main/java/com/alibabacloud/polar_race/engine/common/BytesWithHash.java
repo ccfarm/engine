@@ -6,7 +6,7 @@ public class BytesWithHash extends Object{
     public int hashCode() {
         int hashCode = 0;
         for (int i =0; i < 8; i++) {
-            hashCode += bytes[i];
+            hashCode += bytes[i] * (i+1);
         }
         return hashCode;
     }

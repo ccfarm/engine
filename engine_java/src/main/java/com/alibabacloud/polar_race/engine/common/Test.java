@@ -1,37 +1,31 @@
 package com.alibabacloud.polar_race.engine.common;
 
+import java.util.ArrayList;
+
 public class Test {
     public static void main(String[] args) {
-        EngineRace client = new EngineRace();
-        try {
-            client.open("");
-            for (int i = 0; i < 100; i++) {
-                byte[] key = new byte[8];
-                byte[] value = new byte[4 * 1024];
-                key[0] = (byte)i;
-                value[0] = (byte)i;
-                client.write(key, value);
+        ArrayList<ThreadEngine> ts = new ArrayList<ThreadEngine>();
+        for (int i =0; i < 64; i++) {
+            ThreadEngine t1 = new ThreadEngine((byte)i);
+            t1.start();
+            ts.add(t1);
+        }
+
+        for( int i = 0 ; i < ts.size() ; i++) {
+            try {
+                ts.get(i).join();
             }
-        }
-        catch (Exception e){
-
-        }
-
-        EngineRace client2 = new EngineRace();
-        try {
-            client.open("");
-            for (int i = 0; i < 100; i++) {
-                byte[] key = new byte[8];
-                byte[] value;
-                key[0] = (byte)i;
-                value = client.read(key);
-                //System.out.println(value[0]);
+            catch (Exception e){
 
             }
         }
-        catch (Exception e){
-            //System.out.println(e.getMessage());
+
+        for (int i =0; i < 64; i++) {
+            ThreadRead t1 = new ThreadRead((byte)i);
+            t1.start();
         }
+
+
 
     }
 }

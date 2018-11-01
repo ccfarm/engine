@@ -9,13 +9,19 @@ public class Store{
     HashMap<Integer, RandomAccessFile> valueMap = new HashMap<Integer, RandomAccessFile>();
     String path;
     RandomAccessFile keyFile;
+    boolean readyForRead = false;
     public static Store store = new Store();
 
 
-    synchronized public static void start(String path) throws Exception {
+    synchronized public void start(String path) throws Exception {
         if (store.path == null) {
             store.path = path;
             store.keyFile = new RandomAccessFile(store.path + "keyFile.data", "rw");
+        }
+    }
+
+    synchronized public void readyForRead() throws Exception{
+        if (!this.readyForRead) {
             BytesWithHash key = new BytesWithHash();
             while (store.keyFile.read(key.bytes) != -1) {
                 byte[] bytes = new byte[8];
@@ -26,6 +32,7 @@ public class Store{
                     tmpLong |= (bytes[i] & 0xff);
                 }
                 store.start.put(key, tmpLong);
+                key = new BytesWithHash();
             }
         }
     }
@@ -47,7 +54,7 @@ public class Store{
         }
         RandomAccessFile f = valueMap.get(keyHash);
         synchronized (f) {
-            start.put(key, f.length());
+            //start.put(key, f.length());
 //            System.out.println(key.bytes[0]);
 //            System.out.println(key.hashCode());
             f.write(value);
@@ -65,6 +72,9 @@ public class Store{
         }
     }
     public byte[] read(byte[] _key) throws Exception{
+        if (!readyForRead) {
+            readyForRead();
+        }
         BytesWithHash key = new BytesWithHash();
         key.bytes = _key;
         int keyHash = hash(key);
