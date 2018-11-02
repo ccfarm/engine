@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 public class Store{
     int BLOCKS = 256;
+    int count = 0;
     HashMap<BytesWithHash, Long>  start = new HashMap<BytesWithHash, Long>();
     HashMap<Integer, RandomAccessFile> valueMap = new HashMap<Integer, RandomAccessFile>();
     String path;
@@ -44,6 +45,9 @@ public class Store{
 
 
     public void write(byte[] _key, byte[] value) throws Exception {
+        synchronized (this) {
+            count += 1;
+        }
         BytesWithHash key = new BytesWithHash();
         key.bytes = _key;
         int keyHash = hash(key);

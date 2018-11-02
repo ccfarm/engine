@@ -41,6 +41,9 @@ public class EngineRace extends AbstractEngine {
 	
 	@Override
 	public void close() {
+        System.out.println("------");
+		System.out.println(Store.store.count);
+        System.out.println("------");
 	}
 
 }
