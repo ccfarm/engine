@@ -4,11 +4,13 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
 
+import com.carrotsearch.hppc.LongLongHashMap;
+
 public class Store{
     int BLOCKS = 1;
     int count = 0;
     String path;
-    HashMap<Long, Long>  start = new HashMap<Long, Long>();
+    LongLongHashMap start = new LongLongHashMap();
     RandomAccessFile valueFile;
     RandomAccessFile keyFile;
     boolean readyForRead = false;
@@ -61,9 +63,6 @@ public class Store{
     }
 
     public void write(byte[] _key, byte[] value) throws Exception {
-        synchronized (this) {
-            count += 1;
-        }
 
 
         synchronized (valueFile) {
