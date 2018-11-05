@@ -1,5 +1,6 @@
 package com.alibabacloud.polar_race.engine.common;
 
+import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
 
@@ -18,6 +19,10 @@ public class Store{
     synchronized public void start(String path) throws Exception {
         if (this.path == null) {
             this.path = path;
+            File curDir = new File(path);
+            if (!curDir.exists()) {
+                curDir.mkdir();
+            }
             keyFile = new RandomAccessFile(this.path + "keyFile.data", "rw");
             valueFile = new RandomAccessFile(this.path + "valueFile.data", "rw");
         }
