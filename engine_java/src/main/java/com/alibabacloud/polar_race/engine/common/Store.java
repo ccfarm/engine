@@ -21,7 +21,7 @@ public class Store{
             this.path = path;
             File curDir = new File(path);
             if (!curDir.exists()) {
-                curDir.mkdir();
+                curDir.mkdirs();
             }
             keyFile = new RandomAccessFile(this.path + "keyFile.data", "rw");
             valueFile = new RandomAccessFile(this.path + "valueFile.data", "rw");
