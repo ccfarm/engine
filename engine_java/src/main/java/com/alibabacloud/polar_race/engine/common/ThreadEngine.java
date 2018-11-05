@@ -11,7 +11,7 @@ public class ThreadEngine extends Thread{
     public void run() {
         EngineRace client = new EngineRace();
         try {
-            client.open("");
+            client.open("data/");
             for (int i = 0; i < 100; i++) {
                 byte[] key = new byte[8];
                 byte[] value = new byte[4 * 1024];
@@ -22,7 +22,7 @@ public class ThreadEngine extends Thread{
             }
         }
         catch (Exception e){
-
+            System.out.println(e);
         }
     }
 }

@@ -4,98 +4,100 @@ import java.io.RandomAccessFile;
 import java.util.HashMap;
 
 public class Store{
-    int BLOCKS = 256;
+    int BLOCKS = 1;
     int count = 0;
-    HashMap<BytesWithHash, Long>  start = new HashMap<BytesWithHash, Long>();
-    HashMap<Integer, RandomAccessFile> valueMap = new HashMap<Integer, RandomAccessFile>();
     String path;
+    HashMap<Long, Long>  start = new HashMap<Long, Long>();
+    RandomAccessFile valueFile;
     RandomAccessFile keyFile;
     boolean readyForRead = false;
+    boolean readyForWrite = false;
     public static Store store = new Store();
 
 
     synchronized public void start(String path) throws Exception {
-        if (store.path == null) {
-            store.path = path;
-            store.keyFile = new RandomAccessFile(store.path + "keyFile.data", "rw");
+        if (this.path == null) {
+            this.path = path;
+            keyFile = new RandomAccessFile(this.path + "keyFile.data", "rw");
+            valueFile = new RandomAccessFile(this.path + "valueFile.data", "rw");
         }
     }
 
     synchronized public void readyForRead() throws Exception{
-        if (!this.readyForRead) {
-            BytesWithHash key = new BytesWithHash();
-            while (store.keyFile.read(key.bytes) != -1) {
-                byte[] bytes = new byte[8];
-                store.keyFile.read(bytes);
-                long tmpLong = 0;
+        if (!readyForRead) {
+            byte[] newKey = new byte[16];
+            while (keyFile.read(newKey) != -1) {
+                long tmpKey = 0;
                 for (int i = 0; i < 8; i++) {
-                    tmpLong <<= 8;
-                    tmpLong |= (bytes[i] & 0xff);
+                    tmpKey <<= 8;
+                    tmpKey |= (newKey[i] & 0xff);
                 }
-                store.start.put(key, tmpLong);
-                key = new BytesWithHash();
+                long tmpPos = 0;
+                for (int i = 8; i < 16; i++) {
+                    tmpPos <<= 8;
+                    tmpPos |= (newKey[i] & 0xff);
+                }
+                start.put(tmpKey, tmpPos);
             }
+            readyForRead = true;
         }
     }
 
-
-    private int hash(BytesWithHash key) {
-        return key.hashCode() % BLOCKS;
+    synchronized public void readyForWrite() throws Exception{
+        if (!readyForWrite) {
+            keyFile.seek(keyFile.length());
+            valueFile.seek(valueFile.length());
+            readyForWrite = true;
+        }
     }
-
 
     public void write(byte[] _key, byte[] value) throws Exception {
         synchronized (this) {
             count += 1;
         }
-        BytesWithHash key = new BytesWithHash();
-        key.bytes = _key;
-        int keyHash = hash(key);
-        if (!valueMap.containsKey(keyHash)) {
-            RandomAccessFile f = new RandomAccessFile(store.path + keyHash + ".data", "rw");
-            f.seek(f.length());
-            valueMap.put(keyHash, f);
-        }
-        RandomAccessFile f = valueMap.get(keyHash);
-        synchronized (f) {
-            //start.put(key, f.length());
-//            System.out.println(key.bytes[0]);
-//            System.out.println(key.hashCode());
-            f.write(value);
+
+
+        synchronized (valueFile) {
+            if (!readyForWrite) {
+                readyForWrite();
+            }
+            long pos = valueFile.length();
+            valueFile.write(value);
             byte[] newKey = new byte[16];
             for (int i = 0; i < 8; i++) {
                 newKey[i] = _key[i];
             }
             for (int i = 0; i < 8; i++) {
                 int offset = 64 - (i + 1) * 8;
-                newKey[8 + i] = (byte) ((f.length() >> offset) & 0xff);
+                newKey[8 + i] = (byte) ((pos >> offset) & 0xff);
             }
             synchronized (keyFile) {
                 keyFile.write(newKey);
             }
         }
     }
-    public byte[] read(byte[] _key) throws Exception{
-        if (!readyForRead) {
-            readyForRead();
+    public byte[] read(byte[] key) throws Exception{
+        synchronized (this) {
+            if (!readyForRead) {
+                readyForRead();
+            }
         }
-        BytesWithHash key = new BytesWithHash();
-        key.bytes = _key;
-        int keyHash = hash(key);
-        if (!valueMap.containsKey(keyHash)) {
-            RandomAccessFile f = new RandomAccessFile(store.path + keyHash + ".data", "rw");
-            valueMap.put(keyHash, f);
+        long tmpKey = 0;
+        for (int i = 0; i < 8; i++) {
+            tmpKey <<= 8;
+            tmpKey |= (key[i] & 0xff);
         }
-        RandomAccessFile f = valueMap.get(keyHash);
-        //System.out.println(start.containsKey(key));
-//        System.out.println(key.bytes[0]);
-//        System.out.println(key.hashCode());
-        long tmpLong = start.get(key);
+        //System.out.println(tmpKey);
+        //System.out.println(start);
+        long tmpPos = start.get(tmpKey);
+        //System.out.println(tmpPos);
         byte[] value = new byte[4 * 1024];
-        synchronized (f){
-            f.seek(tmpLong);
-            f.read(value);
+        //System.out.println(2);
+        synchronized (valueFile){
+            valueFile.seek(tmpPos);
+            valueFile.read(value);
         }
+        //System.out.println(2);
         return value;
     }
 }

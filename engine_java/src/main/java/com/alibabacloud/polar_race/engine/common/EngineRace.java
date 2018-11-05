@@ -11,6 +11,7 @@ public class EngineRace extends AbstractEngine {
 			Store.store.start(path);
 		}
 		catch (Exception e) {
+			System.out.println(e);
 		}
 
 	}
@@ -21,6 +22,7 @@ public class EngineRace extends AbstractEngine {
             Store.store.write(key, value);
 		}
 		catch (Exception e) {
+			System.out.println(e);
 		}
 	}
 	
@@ -31,6 +33,7 @@ public class EngineRace extends AbstractEngine {
 			value = Store.store.read(key);
 		}
 		catch (Exception e) {
+			System.out.println(e);
 		}
 		return value;
 	}

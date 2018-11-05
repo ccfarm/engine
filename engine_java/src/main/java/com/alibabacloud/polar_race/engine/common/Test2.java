@@ -2,10 +2,10 @@ package com.alibabacloud.polar_race.engine.common;
 
 import java.util.ArrayList;
 
-public class Test {
+public class Test2 {
     public static void main(String[] args) {
         ArrayList<ThreadEngine> ts = new ArrayList<ThreadEngine>();
-        for (int i =0; i < 32; i++) {
+        for (int i =32; i < 64; i++) {
             ThreadEngine t1 = new ThreadEngine((byte)i);
             t1.start();
             ts.add(t1);
