@@ -30,19 +30,23 @@ public class Store{
 
     synchronized public void readyForRead() throws Exception{
         if (!readyForRead) {
-            byte[] newKey = new byte[16];
-            while (keyFile.read(newKey) != -1) {
+            int length = (int)keyFile.length();
+            byte[] bytes = new byte[length];
+            keyFile.read(bytes);
+            int i = 0;
+            while (i < length) {
                 long tmpKey = 0;
-                for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
                     tmpKey <<= 8;
-                    tmpKey |= (newKey[i] & 0xff);
+                    tmpKey |= (bytes[i + j] & 0xff);
                 }
                 long tmpPos = 0;
-                for (int i = 8; i < 16; i++) {
+                for (int j = 8; j < 16; j++) {
                     tmpPos <<= 8;
-                    tmpPos |= (newKey[i] & 0xff);
+                    tmpPos |= (bytes[i + j] & 0xff);
                 }
                 start.put(tmpKey, tmpPos);
+                i += 16;
             }
             readyForRead = true;
         }
