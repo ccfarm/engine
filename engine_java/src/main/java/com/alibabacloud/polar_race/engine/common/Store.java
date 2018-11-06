@@ -9,7 +9,7 @@ public class Store{
 //    int BLOCKS = 1;
 //    int count = 0;
     String path;
-    LongLongHashMap start = new LongLongHashMap(64000000, 0.9);
+    LongLongHashMap start = new LongLongHashMap();
     RandomAccessFile valueFile;
     RandomAccessFile keyFile;
     boolean readyForRead = false;
