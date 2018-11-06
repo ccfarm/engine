@@ -100,34 +100,30 @@ public class Store{
     }
 
     public void write(byte[] _key, byte[] value) {
-        synchronized (valueFile) {
-            if (!readyForWrite) {
-                readyForWrite();
+        if (!readyForWrite) {
+            readyForWrite();
+        }
+        try {
+            long pos = valueFile.length();
+            valueFile.write(value);
+            byte[] newKey = new byte[16];
+            for (int i = 0; i < 8; i++) {
+                newKey[i] = _key[i];
             }
-            try {
-                long pos = valueFile.length();
-                valueFile.write(value);
-                byte[] newKey = new byte[16];
-                for (int i = 0; i < 8; i++) {
-                    newKey[i] = _key[i];
-                }
-                for (int i = 0; i < 8; i++) {
-                    int offset = 64 - (i + 1) * 8;
-                    newKey[8 + i] = (byte) ((pos >> offset) & 0xff);
-                }
-                synchronized (keyFile) {
-                    keyFile.write(newKey);
-                }
-            } catch (Exception e) {
-                System.out.println(e);
+            for (int i = 0; i < 8; i++) {
+                int offset = 64 - (i + 1) * 8;
+                newKey[8 + i] = (byte) ((pos >> offset) & 0xff);
             }
+            synchronized (keyFile) {
+                keyFile.write(newKey);
+            }
+        } catch (Exception e) {
+            System.out.println(e);
         }
     }
     public byte[] read(byte[] key) throws EngineException{
-        synchronized (this) {
-            if (!readyForRead) {
-                readyForRead();
-            }
+        if (!readyForRead) {
+            readyForRead();
         }
         long tmpKey = 0;
         for (int i = 0; i < 8; i++) {
