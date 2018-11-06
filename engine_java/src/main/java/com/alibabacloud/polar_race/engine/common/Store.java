@@ -20,7 +20,7 @@ public class Store{
     synchronized public void start(String path){
         if (this.path == null) {
             this.path = path;
-            start = new DiyHashMap(10);
+            start = new DiyHashMap(64000000);
             File curDir = new File(path);
             if (!curDir.exists()) {
                 curDir.mkdirs();
