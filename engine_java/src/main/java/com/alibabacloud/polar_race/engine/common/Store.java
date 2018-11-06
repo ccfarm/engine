@@ -2,15 +2,14 @@ package com.alibabacloud.polar_race.engine.common;
 
 import java.io.File;
 import java.io.RandomAccessFile;
-import java.util.HashMap;
 
 import com.carrotsearch.hppc.LongLongHashMap;
 
 public class Store{
-    int BLOCKS = 1;
-    int count = 0;
+//    int BLOCKS = 1;
+//    int count = 0;
     String path;
-    LongLongHashMap start = new LongLongHashMap();
+    LongLongHashMap start = new LongLongHashMap(64000000, 0.9);
     RandomAccessFile valueFile;
     RandomAccessFile keyFile;
     boolean readyForRead = false;
@@ -18,39 +17,59 @@ public class Store{
     public static Store store = new Store();
 
 
-    synchronized public void start(String path) throws Exception {
+    synchronized public void start(String path){
         if (this.path == null) {
             this.path = path;
             File curDir = new File(path);
             if (!curDir.exists()) {
                 curDir.mkdirs();
             }
-            keyFile = new RandomAccessFile(this.path + "keyFile.data", "rw");
-            valueFile = new RandomAccessFile(this.path + "valueFile.data", "rw");
+            try {
+                keyFile = new RandomAccessFile(this.path + "keyFile.data", "rw");
+                valueFile = new RandomAccessFile(this.path + "valueFile.data", "rw");
+            } catch (Exception e) {
+                System.out.println(e);
+            }
+            System.out.println("------");
+            System.out.println("start");
+            System.out.println("------");
         }
     }
 
     synchronized public void readyForRead() throws Exception{
         if (!readyForRead) {
             int length = (int)keyFile.length();
-            byte[] bytes = new byte[length];
-            keyFile.read(bytes);
+            byte[] bytes = new byte[4096];
+            int len;
             int i = 0;
             while (i < length) {
-                long tmpKey = 0;
-                for (int j = 0; j < 8; j++) {
-                    tmpKey <<= 8;
-                    tmpKey |= (bytes[i + j] & 0xff);
+                if (length - i >= 4095) {
+                    len = 4096;
+                } else {
+                    len = length - i + 1;
                 }
-                long tmpPos = 0;
-                for (int j = 8; j < 16; j++) {
-                    tmpPos <<= 8;
-                    tmpPos |= (bytes[i + j] & 0xff);
+                keyFile.read(bytes, 0, len);
+                i += len;
+                int j = 0;
+                while (j < len) {
+                    long tmpKey = 0;
+                    for (int k = 0; k < 8; k++) {
+                        tmpKey <<= 8;
+                        tmpKey |= (bytes[j + k] & 0xff);
+                    }
+                    long tmpPos = 0;
+                    for (int k = 8; k < 16; k++) {
+                        tmpPos <<= 8;
+                        tmpPos |= (bytes[j + k] & 0xff);
+                    }
+                    start.put(tmpKey, tmpPos);
+                    j += 16;
                 }
-                start.put(tmpKey, tmpPos);
-                i += 16;
             }
             readyForRead = true;
+            System.out.println("------");
+            System.out.println("readyForRead");
+            System.out.println("------");
         }
     }
 
@@ -59,6 +78,9 @@ public class Store{
             keyFile.seek(keyFile.length());
             valueFile.seek(valueFile.length());
             readyForWrite = true;
+            System.out.println("------");
+            System.out.println("readyForWrite");
+            System.out.println("------");
         }
     }
 
