@@ -31,30 +31,24 @@ public class DiyHashMap  {
     }
 
     public void put(long key, long value) {
-        try {
-            int hash = hash(key);
-            Entry entry = new Entry(key, value);
-            entry.next = arr[hash];
-            arr[hash] = entry;
-        }
-        catch (Exception e) {
-            System.out.println(e);
-        }
+        int hash = hash(key);
+        Entry entry = new Entry(key, value);
+        entry.next = arr[hash];
+        arr[hash] = entry;
     }
 
     public long get(long key) {
-        try {
-            int hash = hash(key);
-            Entry tmp = arr[hash];
-            while (tmp.key != key) {
-                tmp = tmp.next;
-            }
+        int hash = hash(key);
+        Entry tmp = arr[hash];
+        while (tmp != null && tmp.key != key) {
+            tmp = tmp.next;
+        }
+        if (tmp != null) {
             return tmp.value;
+        } else {
+            return -1l;
         }
-        catch (Exception e) {
-            System.out.println(e);
-            return -1;
-        }
+
     }
 
     @Override

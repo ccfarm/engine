@@ -3,6 +3,8 @@ package com.alibabacloud.polar_race.engine.common;
 import java.io.File;
 import java.io.RandomAccessFile;
 
+import com.alibabacloud.polar_race.engine.common.exceptions.EngineException;
+import com.alibabacloud.polar_race.engine.common.exceptions.RetCodeEnum;
 import com.carrotsearch.hppc.LongLongHashMap;
 
 public class Store{
@@ -21,9 +23,6 @@ public class Store{
     synchronized public void start(String path){
         if (this.path == null) {
             this.path = path;
-            //start = new DiyHashMap(64000000);
-            //start = new DiyHashMap(10);
-            start = new LongLongHashMap();
             File curDir = new File(path);
             if (!curDir.exists()) {
                 curDir.mkdirs();
@@ -40,78 +39,91 @@ public class Store{
         }
     }
 
-    synchronized public void readyForRead() throws Exception{
+    synchronized public void readyForRead() {
         if (!readyForRead) {
-            int length = (int)keyFile.length();
-            System.out.println(length);
-            byte[] bytes = new byte[4096];
-            int len;
-            int i = 0;
-            while (i < length) {
-                if (length - i >= 4095) {
-                    len = 4096;
-                } else {
-                    len = length - i + 1;
-                }
-                keyFile.read(bytes, 0, len);
-                i += len;
-                int j = 0;
-                while (j < len) {
-                    long tmpKey = 0;
-                    for (int k = 0; k < 8; k++) {
-                        tmpKey <<= 8;
-                        tmpKey |= (bytes[j + k] & 0xff);
+            try {
+                //start = new DiyHashMap(64000000);
+                //start = new DiyHashMap(10);
+                start = new LongLongHashMap(64000000, 0.99);
+                int length = (int) keyFile.length();
+                //System.out.println(length);
+                byte[] bytes = new byte[4096];
+                int len;
+                int i = 0;
+                while (i < length) {
+                    if (length - i >= 4095) {
+                        len = 4096;
+                    } else {
+                        len = length - i + 1;
                     }
-                    long tmpPos = 0;
-                    for (int k = 8; k < 16; k++) {
-                        tmpPos <<= 8;
-                        tmpPos |= (bytes[j + k] & 0xff);
+                    keyFile.read(bytes, 0, len);
+                    i += len;
+                    int j = 0;
+                    while (j < len) {
+                        long tmpKey = 0;
+                        for (int k = 0; k < 8; k++) {
+                            tmpKey <<= 8;
+                            tmpKey |= (bytes[j + k] & 0xff);
+                        }
+                        long tmpPos = 0;
+                        for (int k = 8; k < 16; k++) {
+                            tmpPos <<= 8;
+                            tmpPos |= (bytes[j + k] & 0xff);
+                        }
+                        start.put(tmpKey, tmpPos);
+                        j += 16;
                     }
-                    start.put(tmpKey, tmpPos);
-                    j += 16;
                 }
+                readyForRead = true;
+            } catch (Exception e) {
+                System.out.println(e);
             }
-            readyForRead = true;
             System.out.println("------");
             System.out.println("readyForRead");
             System.out.println("------");
         }
     }
 
-    synchronized public void readyForWrite() throws Exception{
+    synchronized public void readyForWrite(){
         if (!readyForWrite) {
-            keyFile.seek(keyFile.length());
-            valueFile.seek(valueFile.length());
-            readyForWrite = true;
+            try {
+                keyFile.seek(keyFile.length());
+                valueFile.seek(valueFile.length());
+                readyForWrite = true;
+            } catch (Exception e) {
+                System.out.println(e);
+            }
             System.out.println("------");
             System.out.println("readyForWrite");
             System.out.println("------");
         }
     }
 
-    public void write(byte[] _key, byte[] value) throws Exception {
-
-
+    public void write(byte[] _key, byte[] value) {
         synchronized (valueFile) {
             if (!readyForWrite) {
                 readyForWrite();
             }
-            long pos = valueFile.length();
-            valueFile.write(value);
-            byte[] newKey = new byte[16];
-            for (int i = 0; i < 8; i++) {
-                newKey[i] = _key[i];
-            }
-            for (int i = 0; i < 8; i++) {
-                int offset = 64 - (i + 1) * 8;
-                newKey[8 + i] = (byte) ((pos >> offset) & 0xff);
-            }
-            synchronized (keyFile) {
-                keyFile.write(newKey);
+            try {
+                long pos = valueFile.length();
+                valueFile.write(value);
+                byte[] newKey = new byte[16];
+                for (int i = 0; i < 8; i++) {
+                    newKey[i] = _key[i];
+                }
+                for (int i = 0; i < 8; i++) {
+                    int offset = 64 - (i + 1) * 8;
+                    newKey[8 + i] = (byte) ((pos >> offset) & 0xff);
+                }
+                synchronized (keyFile) {
+                    keyFile.write(newKey);
+                }
+            } catch (Exception e) {
+                System.out.println(e);
             }
         }
     }
-    public byte[] read(byte[] key) throws Exception{
+    public byte[] read(byte[] key) throws EngineException{
         synchronized (this) {
             if (!readyForRead) {
                 readyForRead();
@@ -126,14 +138,18 @@ public class Store{
         //System.out.println(start);
         long tmpPos = start.getOrDefault(tmpKey, -1l);
         if (tmpPos == -1l) {
-            
+            throw new EngineException(RetCodeEnum.NOT_FOUND, "");
         }
         //System.out.println(tmpPos);
         byte[] value = new byte[4 * 1024];
         //System.out.println(2);
-        synchronized (valueFile){
-            valueFile.seek(tmpPos);
-            valueFile.read(value);
+        try {
+            synchronized (valueFile) {
+                valueFile.seek(tmpPos);
+                valueFile.read(value);
+            }
+        } catch (Exception e) {
+            System.out.println(e);
         }
         //System.out.println(2);
         return value;

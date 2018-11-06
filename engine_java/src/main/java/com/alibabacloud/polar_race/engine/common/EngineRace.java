@@ -32,8 +32,8 @@ public class EngineRace extends AbstractEngine {
 		try {
 			value = Store.store.read(key);
 		}
-		catch (Exception e) {
-			System.out.println(e);
+		catch (EngineException e) {
+			throw e;
 		}
 		return value;
 	}
