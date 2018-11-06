@@ -3,13 +3,14 @@ package com.alibabacloud.polar_race.engine.common;
 import java.io.File;
 import java.io.RandomAccessFile;
 
-//import com.carrotsearch.hppc.LongLongHashMap;
+import com.carrotsearch.hppc.LongLongHashMap;
 
 public class Store{
 //    int BLOCKS = 1;
 //    int count = 0;
     String path;
-    DiyHashMap start;
+    //DiyHashMap start;
+    LongLongHashMap start;
     RandomAccessFile valueFile;
     RandomAccessFile keyFile;
     boolean readyForRead = false;
@@ -20,7 +21,9 @@ public class Store{
     synchronized public void start(String path){
         if (this.path == null) {
             this.path = path;
-            start = new DiyHashMap(64000000);
+            //start = new DiyHashMap(64000000);
+            //start = new DiyHashMap(10);
+            start = new LongLongHashMap();
             File curDir = new File(path);
             if (!curDir.exists()) {
                 curDir.mkdirs();
@@ -40,6 +43,7 @@ public class Store{
     synchronized public void readyForRead() throws Exception{
         if (!readyForRead) {
             int length = (int)keyFile.length();
+            System.out.println(length);
             byte[] bytes = new byte[4096];
             int len;
             int i = 0;
@@ -120,7 +124,10 @@ public class Store{
         }
         //System.out.println(tmpKey);
         //System.out.println(start);
-        long tmpPos = start.get(tmpKey);
+        long tmpPos = start.getOrDefault(tmpKey, -1l);
+        if (tmpPos == -1l) {
+            
+        }
         //System.out.println(tmpPos);
         byte[] value = new byte[4 * 1024];
         //System.out.println(2);

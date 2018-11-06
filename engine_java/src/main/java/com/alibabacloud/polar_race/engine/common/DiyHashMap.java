@@ -1,5 +1,7 @@
 package com.alibabacloud.polar_race.engine.common;
 
+import java.util.Arrays;
+
 public class DiyHashMap  {
     private class Entry {
         long key;
@@ -18,32 +20,48 @@ public class DiyHashMap  {
         arr = new Entry[capacity];
     }
     private int hash(long key) {
-        int tmp = (int) (key % (long)capacity);
+        //System.out.println(""+key+" "+ capacity );
+        int tmp = (int) (key % capacity);
+        //System.out.println(tmp);
         if (tmp < 0) {
             tmp = capacity + tmp;
         }
+        //System.out.println(tmp);
         return tmp;
     }
 
     public void put(long key, long value) {
-        int hash = hash(key);
-        Entry entry = new Entry(key, value);
-        if (arr[hash] == null) {
+        try {
+            int hash = hash(key);
+            Entry entry = new Entry(key, value);
+            entry.next = arr[hash];
             arr[hash] = entry;
-        } else {
-            Entry tmp = arr[hash];
-            while (tmp.next != null) {
-                tmp = tmp.next;
-            }
-            tmp.next = entry;
+        }
+        catch (Exception e) {
+            System.out.println(e);
         }
     }
+
     public long get(long key) {
-        int hash = hash(key);
-        Entry tmp = arr[hash];
-        while (tmp.key != key) {
-            tmp = tmp.next;
+        try {
+            int hash = hash(key);
+            Entry tmp = arr[hash];
+            while (tmp.key != key) {
+                tmp = tmp.next;
+            }
+            return tmp.value;
         }
-        return tmp.value;
+        catch (Exception e) {
+            System.out.println(e);
+            return -1;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "DiyHashMap{" +
+                "arr=" + Arrays.toString(arr) +
+                ", capacity=" + capacity +
+                '}';
     }
 }
