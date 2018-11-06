@@ -3,13 +3,13 @@ package com.alibabacloud.polar_race.engine.common;
 import java.io.File;
 import java.io.RandomAccessFile;
 
-import com.carrotsearch.hppc.LongLongHashMap;
+//import com.carrotsearch.hppc.LongLongHashMap;
 
 public class Store{
 //    int BLOCKS = 1;
 //    int count = 0;
     String path;
-    LongLongHashMap start = new LongLongHashMap();
+    DiyHashMap start = new DiyHashMap(64000000);
     RandomAccessFile valueFile;
     RandomAccessFile keyFile;
     boolean readyForRead = false;
