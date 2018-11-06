@@ -9,7 +9,7 @@ public class Store{
 //    int BLOCKS = 1;
 //    int count = 0;
     String path;
-    DiyHashMap start = new DiyHashMap(64000000);
+    DiyHashMap start;
     RandomAccessFile valueFile;
     RandomAccessFile keyFile;
     boolean readyForRead = false;
@@ -20,6 +20,7 @@ public class Store{
     synchronized public void start(String path){
         if (this.path == null) {
             this.path = path;
+            start = new DiyHashMap(10);
             File curDir = new File(path);
             if (!curDir.exists()) {
                 curDir.mkdirs();

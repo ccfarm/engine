@@ -17,11 +17,19 @@ public class DiyHashMap  {
         this.capacity = capacity;
         arr = new Entry[capacity];
     }
+    private int hash(long key) {
+        int tmp = (int) (key % (long)capacity);
+        if (tmp < 0) {
+            tmp = capacity + tmp;
+        }
+        return tmp;
+    }
+
     public void put(long key, long value) {
-        int hash = (int) (key % capacity);
+        int hash = hash(key);
         Entry entry = new Entry(key, value);
         if (arr[hash] == null) {
-            arr[hash] =entry;
+            arr[hash] = entry;
         } else {
             Entry tmp = arr[hash];
             while (tmp.next != null) {
@@ -31,7 +39,7 @@ public class DiyHashMap  {
         }
     }
     public long get(long key) {
-        int hash = (int) (key % capacity);
+        int hash = hash(key);
         Entry tmp = arr[hash];
         while (tmp.key != key) {
             tmp = tmp.next;
