@@ -34,9 +34,6 @@ public class Store{
             } catch (Exception e) {
                 System.out.println(e);
             }
-            System.out.println("------");
-            System.out.println("start");
-            System.out.println("------");
         }
         user += 1;
         System.out.println("------");
@@ -126,8 +123,11 @@ public class Store{
             readyForWrite();
         }
         try {
-            long pos = valueFile.length();
-            valueFile.write(value);
+            long pos;
+            synchronized (valueFile) {
+                pos = valueFile.length();
+                valueFile.write(value);
+            }
             byte[] newKey = new byte[16];
             for (int i = 0; i < 8; i++) {
                 newKey[i] = _key[i];
