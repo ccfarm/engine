@@ -61,7 +61,7 @@ public class Store{
     synchronized public void readyForRead() {
         if (!readyForRead) {
             try {
-                start = new DiyHashMap(64000000);
+                start = new DiyHashMap(128000000);
                 //start = new DiyHashMap(3);
                 //start = new LongLongHashMap(64000000, 0.99);
                 int length = (int) keyFile.length();
