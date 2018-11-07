@@ -22,7 +22,7 @@ public class Store{
 
     synchronized public void start(String path){
         if (this.path == null) {
-            this.path = path;
+            this.path = path + "/";
             File curDir = new File(path);
             if (!curDir.exists()) {
                 curDir.mkdirs();
