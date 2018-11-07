@@ -10,12 +10,26 @@ public class ThreadRead extends Thread{
         EngineRace client2 = new EngineRace();
         try {
             client2.open("data");
-            for (int i = 0; i < 100; i++) {
+            for (int i = 10000000; i < 10110000; i++) {
                 byte[] key = new byte[8];
                 byte[] value;
-                key[0] = (byte)i;
+                int mod = 10000000;
+                for (int j = 0; j < 8; j++) {
+                    key[j] = (byte)(i / mod % 10);
+                    mod /= 10;
+                }
                 value = client2.read(key);
-                System.out.println(name + " " +(byte)i + value[0] + " " +value[1]);
+                for (int j = 0; j < 8; j++) {
+                    if (key[j] != value[j]) {
+                        for (int k = 0; k < 8; k++) {
+                            System.out.print(key[k]);
+                        }
+                        for (int k = 0; k < 8; k++) {
+                            System.out.print(value[k]);
+                        }
+                        break;
+                    }
+                }
             }
             client2.close();
         }

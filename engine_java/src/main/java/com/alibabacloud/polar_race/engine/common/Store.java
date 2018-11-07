@@ -12,8 +12,8 @@ public class Store{
 //    int count = 0;
     int user = 0;
     String path;
-    //DiyHashMap start;
-    LongLongHashMap start;
+    DiyHashMap start;
+    //LongLongHashMap start;
     RandomAccessFile valueFile;
     RandomAccessFile keyFile;
     boolean readyForRead = false;
@@ -61,9 +61,9 @@ public class Store{
     synchronized public void readyForRead() {
         if (!readyForRead) {
             try {
-                //start = new DiyHashMap(64000000);
+                start = new DiyHashMap(64000000);
                 //start = new DiyHashMap(3);
-                start = new LongLongHashMap(64000000, 0.99);
+                //start = new LongLongHashMap(64000000, 0.99);
                 int length = (int) keyFile.length();
                 //System.out.println(length);
                 byte[] bytes = new byte[4096];
@@ -154,8 +154,11 @@ public class Store{
         }
         //System.out.println(tmpKey);
         //System.out.println(start);
-        long tmpPos = start.getOrDefault(tmpKey, -1l);
+        long tmpPos = start.get(tmpKey);
         if (tmpPos == -1l) {
+            for (int k = 0; k < 8; k++) {
+                System.out.print(key[k]);
+            }
             throw new EngineException(RetCodeEnum.NOT_FOUND, "");
         }
         //System.out.println(tmpPos);
