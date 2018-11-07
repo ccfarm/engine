@@ -10,6 +10,7 @@ import com.carrotsearch.hppc.LongLongHashMap;
 public class Store{
 //    int BLOCKS = 1;
 //    int count = 0;
+    int user = 0;
     String path;
     //DiyHashMap start;
     LongLongHashMap start;
@@ -37,6 +38,27 @@ public class Store{
             System.out.println("start");
             System.out.println("------");
         }
+        user += 1;
+        System.out.println("------");
+        System.out.println("start");
+        System.out.println(user);
+        System.out.println("------");
+    }
+
+    synchronized public void end() {
+        user -= 1;
+        System.out.println("------");
+        System.out.println("end");
+        System.out.println(user);
+        System.out.println("------");
+//        if (user == 0) {
+//            try {
+//                keyFile.close();
+//                valueFile.close();
+//            } catch (Exception e) {
+//                System.out.println(e);
+//            }
+//        }
     }
 
     synchronized public void readyForRead() {

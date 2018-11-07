@@ -47,6 +47,7 @@ public class EngineRace extends AbstractEngine {
         System.out.println("------");
 		System.out.println("close");
         System.out.println("------");
+        Store.store.end();
 	}
 
 }
