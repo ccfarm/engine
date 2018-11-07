@@ -12,7 +12,7 @@ public class ThreadEngine extends Thread{
         EngineRace client = new EngineRace();
         try {
             client.open("data/");
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 10; i++) {
                 byte[] key = new byte[8];
                 byte[] value = new byte[4 * 1024];
                 key[0] = (byte)i;
