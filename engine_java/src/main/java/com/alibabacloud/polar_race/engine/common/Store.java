@@ -63,7 +63,7 @@ public class Store{
             try {
                 //start = new DiyHashMap(64000000);
                 //start = new DiyHashMap(3);
-                start = new LongLongHashMap();
+                start = new LongLongHashMap(64000000, 0.99);
                 int length = (int) keyFile.length();
                 //System.out.println(length);
                 byte[] bytes = new byte[4096];
