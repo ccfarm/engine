@@ -11,13 +11,14 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
 public class EngineRace extends AbstractEngine {
+	final static long MAPSIZE = 4 * 1024 * 1024;
 	String path;
 	//DiyHashMap start;
 	LongLongHashMap start;
 	RandomAccessFile valueFile;
 	RandomAccessFile keyFile;
 	MappedByteBuffer buffKeyFile;
-	MappedByteBuffer buffValueFile;
+	//MappedByteBuffer buffValueFile;
 	boolean readyForRead = false;
 	boolean readyForWrite = false;
 	//FileChannel channel;
@@ -52,12 +53,12 @@ public class EngineRace extends AbstractEngine {
                 //start = new LongLongHashMap();
 				int length = (int) keyFile.length();
 				//System.out.println(length);
-				byte[] bytes = new byte[4096];
+				byte[] bytes = new byte[(int)MAPSIZE];
 				int len;
 				int i = 0;
 				while (i < length) {
-					if (length - i >= 4095) {
-						len = 4096;
+					if (length - i >= MAPSIZE - 1) {
+						len = (int)MAPSIZE;
 					} else {
 						len = length - i + 1;
 					}
@@ -99,7 +100,7 @@ public class EngineRace extends AbstractEngine {
 				count = keyFile.length();
 				//channel = keyFile.getChannel();
 				valueFile = new RandomAccessFile(this.path + "valueFile.data", "rw");
-				//valueFile.seek(valueFile.length());
+				valueFile.seek(valueFile.length());
 				readyForWrite = true;
 			} catch (Exception e) {
 				System.out.println(e);
@@ -119,9 +120,9 @@ public class EngineRace extends AbstractEngine {
 			long pos;
 			synchronized (valueFile) {
 				pos = valueFile.length();
-				buffValueFile = valueFile.getChannel().map(FileChannel.MapMode.READ_WRITE, pos, 4096);
-				buffValueFile.put(value);
-				//valueFile.write(value);
+				//buffValueFile = valueFile.getChannel().map(FileChannel.MapMode.READ_WRITE, pos, 4096);
+				//buffValueFile.put(value);
+				valueFile.write(value);
 			}
 			byte[] newKey = new byte[16];
 			for (int i = 0; i < 8; i++) {
@@ -132,13 +133,13 @@ public class EngineRace extends AbstractEngine {
 				newKey[8 + i] = (byte) ((pos >> offset) & 0xff);
 			}
 			synchronized (keyFile) {
-				if (count % 4096 == 0) {
-					buffKeyFile = keyFile.getChannel().map(FileChannel.MapMode.READ_WRITE, count, 4096);
+				if (count % MAPSIZE == 0) {
+					buffKeyFile = keyFile.getChannel().map(FileChannel.MapMode.READ_WRITE, count, MAPSIZE);
 				}
 				//keyFile.write(newKey);
 				buffKeyFile.put(newKey);
 				count += 16;
-				if (count % 4096 == 0) {
+				if (count % MAPSIZE == 0) {
 					buffKeyFile.force();
 				}
 			}
