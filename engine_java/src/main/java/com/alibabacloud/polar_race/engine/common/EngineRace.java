@@ -120,7 +120,8 @@ public class EngineRace extends AbstractEngine {
 			synchronized (valueFile) {
 				pos = valueFile.length();
 				buffValueFile = valueFile.getChannel().map(FileChannel.MapMode.READ_WRITE, pos, 4096);
-				valueFile.write(value);
+				buffValueFile.put(value);
+				//valueFile.write(value);
 			}
 			byte[] newKey = new byte[16];
 			for (int i = 0; i < 8; i++) {
