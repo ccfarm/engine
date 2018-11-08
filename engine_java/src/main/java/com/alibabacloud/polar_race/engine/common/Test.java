@@ -3,7 +3,15 @@ package com.alibabacloud.polar_race.engine.common;
 import java.util.ArrayList;
 
 public class Test {
+    public static EngineRace client;
+
     public static void main(String[] args) {
+        client = new EngineRace();
+        try {
+            client.open("data");
+        } catch (Exception e) {
+            System.out.println(e);
+        }
         ArrayList<ThreadEngine> ts = new ArrayList<ThreadEngine>();
         for (int i =0; i < 32; i++) {
             ThreadEngine t1 = new ThreadEngine((byte)i);
@@ -19,6 +27,7 @@ public class Test {
             }
         }
 
+        client.close();
 
 
     }

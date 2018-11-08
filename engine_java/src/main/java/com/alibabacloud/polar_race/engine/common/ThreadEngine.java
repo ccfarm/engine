@@ -9,9 +9,7 @@ public class ThreadEngine extends Thread{
     }
     @Override
     public void run() {
-        EngineRace client = new EngineRace();
         try {
-            client.open("data");
             for (int i = 10000000; i < 10110000; i++) {
                 byte[] key = new byte[8];
                 byte[] value = new byte[4 * 1024];
@@ -21,7 +19,7 @@ public class ThreadEngine extends Thread{
                     value[j] = (byte)(i / mod % 10);
                     mod /= 10;
                 }
-                client.write(key, value);
+                Test.client.write(key, value);
             }
         }
         catch (Exception e){
