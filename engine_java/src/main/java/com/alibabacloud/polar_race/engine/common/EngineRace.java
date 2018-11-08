@@ -11,7 +11,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 
 public class EngineRace extends AbstractEngine {
-	final static long MAPSIZE = 4 * 1024 * 1024;
+	final static long MAPSIZE = 16 * 4 * 1024 * 1024;
 	String path;
 	//DiyHashMap start;
 	LongLongHashMap start;
