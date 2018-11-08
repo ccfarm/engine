@@ -7,6 +7,8 @@ import com.carrotsearch.hppc.LongLongHashMap;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 
 public class EngineRace extends AbstractEngine {
 	String path;
@@ -14,8 +16,11 @@ public class EngineRace extends AbstractEngine {
 	LongLongHashMap start;
 	RandomAccessFile valueFile;
 	RandomAccessFile keyFile;
+    MappedByteBuffer buff;
 	boolean readyForRead = false;
 	boolean readyForWrite = false;
+	FileChannel channel;
+	long count = 0l;
 	@Override
 	public void open(String path) throws EngineException {
 		this.path = path + "/";
@@ -23,12 +28,12 @@ public class EngineRace extends AbstractEngine {
 		if (!curDir.exists()) {
 			curDir.mkdirs();
 		}
-		try {
-			keyFile = new RandomAccessFile(this.path + "keyFile.data", "rw");
-			valueFile = new RandomAccessFile(this.path + "valueFile.data", "rw");
-		} catch (Exception e) {
-			System.out.println(e);
-		}
+//		try {
+//			keyFile = new RandomAccessFile(this.path + "keyFile.data", "rw");
+//			valueFile = new RandomAccessFile(this.path + "valueFile.data", "rw");
+//		} catch (Exception e) {
+//			System.out.println(e);
+//		}
 		System.out.println("------");
 		System.out.println("start");
 		System.out.println("------");
@@ -38,6 +43,8 @@ public class EngineRace extends AbstractEngine {
 	synchronized public void readyForRead() {
 		if (!readyForRead) {
 			try {
+				keyFile = new RandomAccessFile(this.path + "keyFile.data", "r");
+				valueFile = new RandomAccessFile(this.path + "valueFile.data", "r");
 				//start = new DiyHashMap(128000000);
 				//start = new DiyHashMap(3);
 				start = new LongLongHashMap(64000000, 0.99);
@@ -67,6 +74,9 @@ public class EngineRace extends AbstractEngine {
 							tmpPos <<= 8;
 							tmpPos |= (bytes[j + k] & 0xff);
 						}
+						if (tmpKey == 0 && tmpPos == 0) {
+							break;
+						}
 						start.put(tmpKey, tmpPos);
 						j += 16;
 					}
@@ -84,7 +94,10 @@ public class EngineRace extends AbstractEngine {
 	synchronized public void readyForWrite(){
 		if (!readyForWrite) {
 			try {
-				keyFile.seek(keyFile.length());
+				keyFile = new RandomAccessFile(this.path + "keyFile.data", "rw");
+				count = keyFile.length();
+				channel = keyFile.getChannel();
+				valueFile = new RandomAccessFile(this.path + "valueFile.data", "rw");
 				valueFile.seek(valueFile.length());
 				readyForWrite = true;
 			} catch (Exception e) {
@@ -116,7 +129,15 @@ public class EngineRace extends AbstractEngine {
 				newKey[8 + i] = (byte) ((pos >> offset) & 0xff);
 			}
 			synchronized (keyFile) {
-				keyFile.write(newKey);
+				if (count % 4096 == 0) {
+					buff = keyFile.getChannel().map(FileChannel.MapMode.READ_WRITE, count, 4096);
+				}
+				//keyFile.write(newKey);
+				buff.put(newKey);
+				count += 16;
+				if (count % 4096 == 0) {
+					buff.force();
+				}
 			}
 		} catch (Exception e) {
 			System.out.println(e);
@@ -164,6 +185,7 @@ public class EngineRace extends AbstractEngine {
 	@Override
 	public void close() {
 		try {
+			//buff.force();
 			keyFile.close();
 			valueFile.close();
 		} catch (Exception e) {
