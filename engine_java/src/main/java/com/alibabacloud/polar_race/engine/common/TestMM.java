@@ -14,6 +14,7 @@ public class TestMM {
             byte[] bytes = new byte[4];
             bytes[0] = (byte)1;
             buff.put(bytes);
+            //System.out.println(buff.position());
             buff.position(0);
             bytes = new byte[48];
             buff.get(bytes);

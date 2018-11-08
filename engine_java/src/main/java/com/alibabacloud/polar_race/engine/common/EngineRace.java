@@ -16,10 +16,11 @@ public class EngineRace extends AbstractEngine {
 	LongLongHashMap start;
 	RandomAccessFile valueFile;
 	RandomAccessFile keyFile;
-    MappedByteBuffer buff;
+	MappedByteBuffer buffKeyFile;
+	MappedByteBuffer buffValueFile;
 	boolean readyForRead = false;
 	boolean readyForWrite = false;
-	FileChannel channel;
+	//FileChannel channel;
 	long count = 0l;
 	@Override
 	public void open(String path) throws EngineException {
@@ -96,9 +97,9 @@ public class EngineRace extends AbstractEngine {
 			try {
 				keyFile = new RandomAccessFile(this.path + "keyFile.data", "rw");
 				count = keyFile.length();
-				channel = keyFile.getChannel();
+				//channel = keyFile.getChannel();
 				valueFile = new RandomAccessFile(this.path + "valueFile.data", "rw");
-				valueFile.seek(valueFile.length());
+				//valueFile.seek(valueFile.length());
 				readyForWrite = true;
 			} catch (Exception e) {
 				System.out.println(e);
@@ -118,6 +119,7 @@ public class EngineRace extends AbstractEngine {
 			long pos;
 			synchronized (valueFile) {
 				pos = valueFile.length();
+				buffValueFile = valueFile.getChannel().map(FileChannel.MapMode.READ_WRITE, pos, 4096);
 				valueFile.write(value);
 			}
 			byte[] newKey = new byte[16];
@@ -130,13 +132,13 @@ public class EngineRace extends AbstractEngine {
 			}
 			synchronized (keyFile) {
 				if (count % 4096 == 0) {
-					buff = keyFile.getChannel().map(FileChannel.MapMode.READ_WRITE, count, 4096);
+					buffKeyFile = keyFile.getChannel().map(FileChannel.MapMode.READ_WRITE, count, 4096);
 				}
 				//keyFile.write(newKey);
-				buff.put(newKey);
+				buffKeyFile.put(newKey);
 				count += 16;
 				if (count % 4096 == 0) {
-					buff.force();
+					buffKeyFile.force();
 				}
 			}
 		} catch (Exception e) {
@@ -158,9 +160,9 @@ public class EngineRace extends AbstractEngine {
 		//System.out.println(start);
 		long tmpPos = start.getOrDefault(tmpKey, -1l);
 		if (tmpPos == -1l) {
-			for (int k = 0; k < 8; k++) {
-				System.out.print(key[k]);
-			}
+			//for (int k = 0; k < 8; k++) {
+				//System.out.print(key[k]);
+			//}
 			throw new EngineException(RetCodeEnum.NOT_FOUND, "");
 		}
 		//System.out.println(tmpPos);
