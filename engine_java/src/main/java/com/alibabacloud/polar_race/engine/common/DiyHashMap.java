@@ -24,15 +24,53 @@ public class DiyHashMap  {
         this.capacity = capacity;
         arr = new Entry[capacity];
     }
+
+    public static int _hash(final byte[] data) {
+        // 'm' and 'r' are mixing constants generated offline.
+        // They're not really 'magic', they just happen to work well.
+        final int m = 0x5bd1e995;
+        final int r = 24;
+
+        // Initialize the hash to a random value
+        int h = 0x9747b28c^8;
+
+        for (int i=0; i<2; i++) {
+            final int i4 = i*4;
+            int k = (data[i4+0]&0xff) +((data[i4+1]&0xff)<<8)
+                    +((data[i4+2]&0xff)<<16) +((data[i4+3]&0xff)<<24);
+            k *= m;
+            k ^= k >>> r;
+            k *= m;
+            h *= m;
+            h ^= k;
+        }
+
+        // Handle the last few bytes of the input array
+
+        h ^= h >>> 13;
+        h *= m;
+        h ^= h >>> 15;
+
+        return h;
+    }
+
     private int hash(long key) {
-        HashCode c = hashFunction.hashLong(key);
+
         //System.out.println(""+key+" "+ capacity );
-        int tmp = c.asInt() % capacity;
+        byte[] buffer = new byte[8];
+        for (int i = 0; i < 8; i++) {
+            int offset = 64 - (i + 1) * 8;
+            buffer[i] = (byte) ((key >> offset) & 0xff);
+        }
+        int tmp = _hash(buffer);
+        //System.out.println(tmp);
+        tmp %= capacity;
         //System.out.println(tmp);
         if (tmp < 0) {
             tmp = capacity + tmp;
         }
-        //System.out.println(tmp);
+        //System.out.println(key);
+        System.out.println(tmp);
         return tmp;
     }
 
