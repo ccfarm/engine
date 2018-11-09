@@ -13,16 +13,17 @@ import java.nio.channels.FileChannel;
 public class EngineRace extends AbstractEngine {
 	final static long MAPSIZE = 16 * 4 * 1024 * 1024;
 	String path;
-	DiyHashMap start;
-	//LongLongHashMap start;
+	//DiyHashMap start;
+	LongLongHashMap start;
 	RandomAccessFile valueFile;
 	RandomAccessFile keyFile;
 	MappedByteBuffer buffKeyFile;
-	//MappedByteBuffer buffValueFile;
+	MappedByteBuffer buffValueFile;
 	boolean readyForRead = false;
 	boolean readyForWrite = false;
 	//FileChannel channel;
-	long count = 0l;
+	long countKeyFile = 0l;
+	long countValueFile = 0l;
 	@Override
 	public void open(String path) throws EngineException {
 		this.path = path + "/";
@@ -47,9 +48,9 @@ public class EngineRace extends AbstractEngine {
 			try {
 				keyFile = new RandomAccessFile(this.path + "keyFile.data", "r");
 				valueFile = new RandomAccessFile(this.path + "valueFile.data", "r");
-				start = new DiyHashMap(64000000);
+				//start = new DiyHashMap(64000000);
 				//start = new DiyHashMap(3);
-				//start = new LongLongHashMap(64000000, 0.99);
+				start = new LongLongHashMap(64000000, 0.99);
                 //start = new LongLongHashMap();
 				int length = (int) keyFile.length();
 				//System.out.println(length);
@@ -97,10 +98,11 @@ public class EngineRace extends AbstractEngine {
 		if (!readyForWrite) {
 			try {
 				keyFile = new RandomAccessFile(this.path + "keyFile.data", "rw");
-				count = keyFile.length();
+				countKeyFile = keyFile.length();
 				//channel = keyFile.getChannel();
 				valueFile = new RandomAccessFile(this.path + "valueFile.data", "rw");
-				valueFile.seek(valueFile.length());
+                countValueFile = valueFile.length();
+				//valueFile.seek(valueFile.length());
 				readyForWrite = true;
 			} catch (Exception e) {
 				System.out.println(e);
@@ -119,10 +121,17 @@ public class EngineRace extends AbstractEngine {
 		try {
 			long pos;
 			synchronized (valueFile) {
-				pos = valueFile.length();
+                if (countValueFile % MAPSIZE == 0) {
+                    buffValueFile = valueFile.getChannel().map(FileChannel.MapMode.READ_WRITE, countValueFile, MAPSIZE);
+                }
+				pos = countValueFile;
 				//buffValueFile = valueFile.getChannel().map(FileChannel.MapMode.READ_WRITE, pos, 4096);
-				//buffValueFile.put(value);
-				valueFile.write(value);
+				buffValueFile.put(value);
+				countValueFile += 4 * 1024;
+                if (countValueFile % MAPSIZE == 0) {
+                    buffValueFile.force();
+                }
+				//valueFile.write(value);
 			}
 			byte[] newKey = new byte[16];
 			for (int i = 0; i < 8; i++) {
@@ -133,13 +142,13 @@ public class EngineRace extends AbstractEngine {
 				newKey[8 + i] = (byte) ((pos >> offset) & 0xff);
 			}
 			synchronized (keyFile) {
-				if (count % MAPSIZE == 0) {
-					buffKeyFile = keyFile.getChannel().map(FileChannel.MapMode.READ_WRITE, count, MAPSIZE);
+				if (countKeyFile % MAPSIZE == 0) {
+					buffKeyFile = keyFile.getChannel().map(FileChannel.MapMode.READ_WRITE, countKeyFile, MAPSIZE);
 				}
 				//keyFile.write(newKey);
 				buffKeyFile.put(newKey);
-				count += 16;
-				if (count % MAPSIZE == 0) {
+				countKeyFile += 16;
+				if (countKeyFile % MAPSIZE == 0) {
 					buffKeyFile.force();
 				}
 			}
@@ -160,7 +169,7 @@ public class EngineRace extends AbstractEngine {
 		}
 		//System.out.println(tmpKey);
 		//System.out.println(start);
-		long tmpPos = start.get(tmpKey);
+		long tmpPos = start.getOrDefault(tmpKey, -1l);
 		if (tmpPos == -1l) {
 			//for (int k = 0; k < 8; k++) {
 				//System.out.print(key[k]);
