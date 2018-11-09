@@ -13,8 +13,8 @@ import java.nio.channels.FileChannel;
 public class EngineRace extends AbstractEngine {
 	final static long MAPSIZE = 16 * 4 * 1024 * 1024;
 	String path;
-	//DiyHashMap start;
-	LongLongHashMap start;
+	DiyHashMap start;
+	//LongLongHashMap start;
 	RandomAccessFile valueFile;
 	RandomAccessFile keyFile;
 	MappedByteBuffer buffKeyFile;
@@ -47,9 +47,9 @@ public class EngineRace extends AbstractEngine {
 			try {
 				keyFile = new RandomAccessFile(this.path + "keyFile.data", "r");
 				valueFile = new RandomAccessFile(this.path + "valueFile.data", "r");
-				//start = new DiyHashMap(128000000);
+				start = new DiyHashMap(64000000);
 				//start = new DiyHashMap(3);
-				start = new LongLongHashMap(64000000, 0.99);
+				//start = new LongLongHashMap(64000000, 0.99);
                 //start = new LongLongHashMap();
 				int length = (int) keyFile.length();
 				//System.out.println(length);
@@ -139,9 +139,9 @@ public class EngineRace extends AbstractEngine {
 				//keyFile.write(newKey);
 				buffKeyFile.put(newKey);
 				count += 16;
-//				if (count % MAPSIZE == 0) {
-//					buffKeyFile.force();
-//				}
+				if (count % MAPSIZE == 0) {
+					buffKeyFile.force();
+				}
 			}
 		} catch (Exception e) {
 			System.out.println(e);
@@ -160,7 +160,7 @@ public class EngineRace extends AbstractEngine {
 		}
 		//System.out.println(tmpKey);
 		//System.out.println(start);
-		long tmpPos = start.getOrDefault(tmpKey, -1l);
+		long tmpPos = start.get(tmpKey);
 		if (tmpPos == -1l) {
 			//for (int k = 0; k < 8; k++) {
 				//System.out.print(key[k]);

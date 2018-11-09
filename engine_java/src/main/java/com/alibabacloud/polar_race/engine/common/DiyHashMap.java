@@ -1,8 +1,13 @@
 package com.alibabacloud.polar_race.engine.common;
 
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+
 import java.util.Arrays;
 
 public class DiyHashMap  {
+    HashFunction hashFunction = Hashing.murmur3_32();
     private class Entry {
         long key;
         long value;
@@ -20,8 +25,9 @@ public class DiyHashMap  {
         arr = new Entry[capacity];
     }
     private int hash(long key) {
+        HashCode c = hashFunction.hashLong(key);
         //System.out.println(""+key+" "+ capacity );
-        int tmp = (int) (key % capacity);
+        int tmp = c.asInt() % capacity;
         //System.out.println(tmp);
         if (tmp < 0) {
             tmp = capacity + tmp;
@@ -49,13 +55,5 @@ public class DiyHashMap  {
             return -1l;
         }
 
-    }
-
-    @Override
-    public String toString() {
-        return "DiyHashMap{" +
-                "arr=" + Arrays.toString(arr) +
-                ", capacity=" + capacity +
-                '}';
     }
 }
