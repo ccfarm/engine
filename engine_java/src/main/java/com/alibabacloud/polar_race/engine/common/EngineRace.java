@@ -139,9 +139,9 @@ public class EngineRace extends AbstractEngine {
 				//keyFile.write(newKey);
 				buffKeyFile.put(newKey);
 				count += 16;
-				if (count % MAPSIZE == 0) {
-					buffKeyFile.force();
-				}
+//				if (count % MAPSIZE == 0) {
+//					buffKeyFile.force();
+//				}
 			}
 		} catch (Exception e) {
 			System.out.println(e);
