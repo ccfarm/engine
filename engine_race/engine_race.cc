@@ -5,6 +5,7 @@
 #include <map>
 #include "util.h"
 #include "engine_race.h"
+#include "include/engine.h"
 
 namespace polar_race {
 
