@@ -3,7 +3,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <map>
-#include "util.h"
 #include "engine_race.h"
 #include "include/engine.h"
 
