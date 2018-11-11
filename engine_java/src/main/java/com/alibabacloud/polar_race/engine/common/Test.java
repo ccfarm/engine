@@ -13,7 +13,7 @@ public class Test {
             System.out.println(e);
         }
         ArrayList<ThreadEngine> ts = new ArrayList<ThreadEngine>();
-        for (int i =0; i < 32; i++) {
+        for (int i =0; i < 1; i++) {
             ThreadEngine t1 = new ThreadEngine((byte)i);
             t1.start();
             ts.add(t1);
