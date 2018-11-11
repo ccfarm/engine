@@ -1,13 +1,6 @@
 package com.alibabacloud.polar_race.engine.common;
 
-import com.google.common.hash.HashCode;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
-
-import java.util.Arrays;
-
 public class DiyHashMap  {
-    HashFunction hashFunction = Hashing.murmur3_32();
     private class Entry {
         long key;
         long value;
