@@ -22,9 +22,11 @@ public class ThreadRead extends Thread{
                         for (int k = 0; k < 8; k++) {
                             System.out.print(key[k]);
                         }
+                        System.out.println("");
                         for (int k = 0; k < 8; k++) {
                             System.out.print(value[k]);
                         }
+                        System.out.println("");
                         break;
                     }
                 }
