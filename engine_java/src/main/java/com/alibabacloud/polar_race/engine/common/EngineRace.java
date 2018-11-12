@@ -3,6 +3,7 @@ package com.alibabacloud.polar_race.engine.common;
 import com.alibabacloud.polar_race.engine.common.AbstractEngine;
 import com.alibabacloud.polar_race.engine.common.exceptions.EngineException;
 import com.alibabacloud.polar_race.engine.common.exceptions.RetCodeEnum;
+import com.carrotsearch.hppc.LongIntHashMap;
 import com.carrotsearch.hppc.LongLongHashMap;
 
 import java.io.File;
@@ -18,7 +19,8 @@ public class EngineRace extends AbstractEngine {
     final static long FILENUM =  128;
 	String path;
 	//DiyHashMap position;
-	LongLongHashMap position;
+	//LongLongHashMap position;
+    LongIntHashMap position;
 	RandomAccessFile keyFile;
 	MappedByteBuffer buffKeyFile;
 	//MappedByteBuffer buffValueFile;
@@ -60,7 +62,7 @@ public class EngineRace extends AbstractEngine {
 				//valueFile = new RandomAccessFile(this.path + "valueFile.data", "r");
 				//position = new DiyHashMap(64000000);
 				//position = new DiyHashMap(3);
-				position = new LongLongHashMap(64000000, 0.99);
+				position = new LongIntHashMap(64000000, 0.99);
                 //position = new LongLongHashMap();
 				int length = (int) keyFile.length();
 				//System.out.println(length);
@@ -90,9 +92,9 @@ public class EngineRace extends AbstractEngine {
 						if (tmpKey == 0 && posInt == 0) {
 							break;
 						}
-                        long tmpPos = (long) posInt;
-						tmpPos <<= 12;
-						position.put(tmpKey, tmpPos);
+                        //long tmpPos = (long) posInt;
+						//tmpPos <<= 12;
+						position.put(tmpKey, posInt);
 						j += 12;
 					}
 				}
@@ -196,13 +198,15 @@ public class EngineRace extends AbstractEngine {
 		}
 		//System.out.println(tmpKey);
 		//System.out.println(position);
-		long tmpPos = position.getOrDefault(tmpKey, -1l);
-		if (tmpPos == -1l) {
+		long posInt = position.getOrDefault(tmpKey, -1);
+		if (posInt == -1) {
 			//for (int k = 0; k < 8; k++) {
 				//System.out.print(key[k]);
 			//}
 			throw new EngineException(RetCodeEnum.NOT_FOUND, "");
 		}
+        long tmpPos =  posInt;
+        tmpPos <<= 12;
 		//System.out.println(tmpPos);
 		int fileIndex = (int)(tmpKey % FILENUM);
 		if (fileIndex < 0) {
