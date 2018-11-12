@@ -8,6 +8,7 @@ import com.carrotsearch.hppc.LongLongHashMap;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class EngineRace extends AbstractEngine {
 	//MappedByteBuffer buffValueFile;
 	boolean readyForRead = false;
 	boolean readyForWrite = false;
-	//FileChannel channel;
+	FileChannel channelKeyFile;
 	long countKeyFile = 0l;
 	//long countValueFile = 0l;
 	List<RandomAccessFile> valueFiles;
@@ -53,6 +54,7 @@ public class EngineRace extends AbstractEngine {
 		if (!readyForRead) {
 			try {
 				keyFile = new RandomAccessFile(this.path + "keyFile", "r");
+				channelKeyFile = keyFile.getChannel();
 				valueFiles = new ArrayList<RandomAccessFile>();
 				for (int i = 0; i < FILENUM; i++) {
 				    RandomAccessFile f = new RandomAccessFile(this.path + "valueFile" + i, "rw");
@@ -66,6 +68,7 @@ public class EngineRace extends AbstractEngine {
                 //position = new LongLongHashMap();
 				int length = (int) keyFile.length();
 				//System.out.println(length);
+                ByteBuffer tmpBuffer;
 				byte[] bytes = new byte[(int)MAPSIZE];
 				int len;
 				int i = 0;
@@ -75,7 +78,10 @@ public class EngineRace extends AbstractEngine {
 					} else {
 						len = length - i + 1;
 					}
-					keyFile.read(bytes, 0, len);
+                    tmpBuffer = ByteBuffer.allocate(len);
+					channelKeyFile.read(tmpBuffer);
+					//keyFile.read(bytes, 0, len);
+                    bytes = tmpBuffer.array();
 					i += len;
 					int j = 0;
 					while (j < len) {
@@ -235,13 +241,13 @@ public class EngineRace extends AbstractEngine {
 	
 	@Override
 	public void close() {
-	    try {
-            for (RandomAccessFile f : valueFiles) {
-                System.out.println(f.length());
-            }
-        } catch (Exception e) {
-
-        }
+//	    try {
+//            for (RandomAccessFile f : valueFiles) {
+//                System.out.println(f.length());
+//            }
+//        } catch (Exception e) {
+//
+//        }
 
         System.out.println("------");
 		System.out.println("close");
