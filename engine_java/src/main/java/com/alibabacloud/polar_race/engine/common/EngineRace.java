@@ -15,11 +15,10 @@ import java.util.List;
 public class EngineRace extends AbstractEngine {
 	final static long MAPSIZE = 16 * 4 * 1024 * 1024l;
 	//final static long FILESIZE =  4 * 1024 * 1024 * 1024;
-    final static long FILESIZE =  1024 * 1024 * 4 * 1024l;
+    final static long FILENUM =  256;
 	String path;
 	//DiyHashMap position;
 	LongLongHashMap position;
-	RandomAccessFile valueFile;
 	RandomAccessFile keyFile;
 	MappedByteBuffer buffKeyFile;
 	//MappedByteBuffer buffValueFile;
@@ -28,7 +27,6 @@ public class EngineRace extends AbstractEngine {
 	//FileChannel channel;
 	long countKeyFile = 0l;
 	//long countValueFile = 0l;
-	int valueFileIndex;
 	List<RandomAccessFile> valueFiles;
 	@Override
 	public void open(String path) throws EngineException {
@@ -54,15 +52,10 @@ public class EngineRace extends AbstractEngine {
 			try {
 				keyFile = new RandomAccessFile(this.path + "keyFile", "r");
 				valueFiles = new ArrayList<RandomAccessFile>();
-				valueFileIndex = 0;
-				File f = new File(this.path  + "valueFile" + valueFileIndex);
-				//System.out.println(this.path  + "valueFile" + valueFileIndex);
-				while (f.exists()) {
-					//System.out.println(this.path  + "valueFile" + valueFileIndex);
-				    RandomAccessFile rf = new RandomAccessFile(f, "r");
-				    valueFiles.add(rf);
-				    valueFileIndex += 1;
-                    f = new File(this.path  + "valueFile" + valueFileIndex);
+				for (int i = 0; i < FILENUM; i++) {
+				    RandomAccessFile f = new RandomAccessFile(this.path + "valueFile" + i, "rw");
+				    f.seek(f.length());
+				    valueFiles.add(f);
                 }
 				//valueFile = new RandomAccessFile(this.path + "valueFile.data", "r");
 				//position = new DiyHashMap(64000000);
@@ -117,15 +110,12 @@ public class EngineRace extends AbstractEngine {
 				keyFile = new RandomAccessFile(this.path + "keyFile", "rw");
 				countKeyFile = keyFile.length();
 				//channel = keyFile.getChannel();
-                valueFileIndex = 0;
-                File f = new File(this.path  + "valueFile" + valueFileIndex);
-                while (f.exists()) {
-                    valueFileIndex += 1;
-                    f = new File(this.path  + "valueFile" + valueFileIndex);
+                valueFiles = new ArrayList<RandomAccessFile>();
+				for (int i = 0; i < FILENUM; i++) {
+				    RandomAccessFile f = new RandomAccessFile(this.path + "valueFile" + i, "rw");
+				    f.seek(f.length());
+				    valueFiles.add(f);
                 }
-				valueFile = new RandomAccessFile(f, "rw");
-                //countValueFile = valueFile.length();
-				//valueFile.seek(valueFile.length());
 				readyForWrite = true;
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -142,9 +132,18 @@ public class EngineRace extends AbstractEngine {
 			readyForWrite();
 		}
 		try {
+		    long tmpKey = 0;
+			for (int i = 0; i < 8; i++) {
+				tmpKey <<= 8;
+				tmpKey |= (key[i] & 0xff);
+			}
+			int fileIndex = (int)(tmpKey % FILENUM);
+			if (fileIndex < 0) {
+				fileIndex += FILENUM;
+			}
 			long pos;
-			int valueFileIndexThis;
-			synchronized (this) {
+			RandomAccessFile f = valueFiles.get(fileIndex);
+			synchronized (f) {
 //                if (countValueFile % MAPSIZE == 0) {
 //                    buffValueFile = valueFile.getChannel().map(FileChannel.MapMode.READ_WRITE, countValueFile, MAPSIZE);
 //                }
@@ -155,30 +154,16 @@ public class EngineRace extends AbstractEngine {
 //                if (countValueFile % MAPSIZE == 0) {
 //                    buffValueFile.force();
 //                }
-                pos = valueFile.getFilePointer();
-//                System.out.println(MAPSIZE);
-//                System.out.println(FILESIZE);
-                if (pos == FILESIZE) {
-                    valueFileIndex += 1;
-                    valueFile.close();
-                    valueFile = new RandomAccessFile(this.path  + "valueFile" + valueFileIndex, "rw");
-                    pos = 0;
-                }
-				valueFile.write(value);
-                valueFileIndexThis = valueFileIndex;
+                pos = f.length();
+				f.write(value);
 			}
 			byte[] newKey = new byte[16];
 			for (int i = 0; i < 8; i++) {
 				newKey[i] = key[i];
 			}
-			for (int i = 0; i < 4; i++) {
-                int offset = 32 - (i + 1) * 8;
-                newKey[8 + i] = (byte) ((valueFileIndexThis >>> offset) & 0xff);
-            }
-            pos >>= 12;
-            for (int i = 0; i < 4; i++) {
-                int offset = 32 - (i + 1) * 8;
-                newKey[12 + i] = (byte) ((pos >>> offset) & 0xff);
+            for (int i = 0; i < 8; i++) {
+                int offset = 64 - (i + 1) * 8;
+                newKey[8 + i] = (byte) ((pos >>> offset) & 0xff);
             }
 			synchronized (keyFile) {
 				if (countKeyFile % MAPSIZE == 0) {
@@ -216,17 +201,19 @@ public class EngineRace extends AbstractEngine {
 			throw new EngineException(RetCodeEnum.NOT_FOUND, "");
 		}
 		//System.out.println(tmpPos);
-        int valueFileIndex = (int)(tmpPos >>> 32 & 0xffff);
-		long pos = tmpPos & 0xffff;
+		int fileIndex = (int)(tmpKey % FILENUM);
+		if (fileIndex < 0) {
+			fileIndex += FILENUM;
+		}
+		RandomAccessFile f = valueFiles.get(fileIndex);
 		byte[] value = new byte[4 * 1024];
         //System.out.println(tmpPos >>> 32);
 		//System.out.println(valueFileIndex);
         //System.out.println(pos);
 		try {
-		    RandomAccessFile rf = valueFiles.get(valueFileIndex);
-			synchronized (rf) {
-				rf.seek(pos<<12);
-				rf.read(value);
+			synchronized (f) {
+				f.seek(tmpPos);
+				f.read(value);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
