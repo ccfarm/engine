@@ -235,14 +235,12 @@ public class EngineRace extends AbstractEngine {
 	
 	@Override
 	public void close() {
-	    if (readyForWrite) {
-            try {
-                //buff.force();
-//                keyFile.close();
-//                valueFile.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+	    try {
+            for (RandomAccessFile f : valueFiles) {
+                System.out.println(f.length());
             }
+        } catch (Exception e) {
+
         }
 
         System.out.println("------");
