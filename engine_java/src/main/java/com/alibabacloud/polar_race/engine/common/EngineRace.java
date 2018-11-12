@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EngineRace extends AbstractEngine {
-	final static long MAPSIZE = 16 * 4 * 1024 * 1024l;
+	final static long MAPSIZE = 12 * 1024 * 4 * 1024l;
 	//final static long FILESIZE =  4 * 1024 * 1024 * 1024;
     final static long FILENUM =  128;
 	String path;
@@ -82,16 +82,18 @@ public class EngineRace extends AbstractEngine {
 							tmpKey <<= 8;
 							tmpKey |= (bytes[j + k] & 0xff);
 						}
-						long tmpPos = 0;
-						for (int k = 8; k < 16; k++) {
-							tmpPos <<= 8;
-							tmpPos |= (bytes[j + k] & 0xff);
+						int posInt = 0;
+						for (int k = 8; k < 12; k++) {
+							posInt <<= 8;
+                            posInt |= (bytes[j + k] & 0xff);
 						}
-						if (tmpKey == 0 && tmpPos == 0) {
+						if (tmpKey == 0 && posInt == 0) {
 							break;
 						}
+                        long tmpPos = (long) posInt;
+						tmpPos <<= 12;
 						position.put(tmpKey, tmpPos);
-						j += 16;
+						j += 12;
 					}
 				}
 				readyForRead = true;
@@ -157,13 +159,14 @@ public class EngineRace extends AbstractEngine {
                 pos = f.length();
 				f.write(value);
 			}
-			byte[] newKey = new byte[16];
+			byte[] newKey = new byte[12];
 			for (int i = 0; i < 8; i++) {
 				newKey[i] = key[i];
 			}
-            for (int i = 0; i < 8; i++) {
-                int offset = 64 - (i + 1) * 8;
-                newKey[8 + i] = (byte) ((pos >>> offset) & 0xff);
+			int posInt = (int)(pos>>>12);
+            for (int i = 0; i < 4; i++) {
+                int offset = 32 - (i + 1) * 8;
+                newKey[8 + i] = (byte) ((posInt >>> offset) & 0xff);
             }
 			synchronized (keyFile) {
 				if (countKeyFile % MAPSIZE == 0) {
@@ -171,7 +174,7 @@ public class EngineRace extends AbstractEngine {
 				}
 				//keyFile.write(newKey);
 				buffKeyFile.put(newKey);
-				countKeyFile += 16;
+				countKeyFile += 12;
 				if (countKeyFile % MAPSIZE == 0) {
 					buffKeyFile.force();
 				}
