@@ -54,7 +54,7 @@ public class EngineRace extends AbstractEngine {
 		if (!readyForRead) {
 			try {
 				keyFile = new RandomAccessFile(this.path + "keyFile", "r");
-				channelKeyFile = keyFile.getChannel();
+				//channelKeyFile = keyFile.getChannel();
 				valueFiles = new ArrayList<RandomAccessFile>();
 				for (int i = 0; i < FILENUM; i++) {
 				    RandomAccessFile f = new RandomAccessFile(this.path + "valueFile" + i, "rw");
@@ -68,7 +68,7 @@ public class EngineRace extends AbstractEngine {
                 //position = new LongLongHashMap();
 				int length = (int) keyFile.length();
 				//System.out.println(length);
-                ByteBuffer tmpBuffer;
+                //ByteBuffer tmpBuffer;
 				byte[] bytes = new byte[(int)MAPSIZE];
 				int len;
 				int i = 0;
@@ -78,10 +78,10 @@ public class EngineRace extends AbstractEngine {
 					} else {
 						len = length - i + 1;
 					}
-                    tmpBuffer = ByteBuffer.allocate(len);
-					channelKeyFile.read(tmpBuffer);
-					//keyFile.read(bytes, 0, len);
-                    bytes = tmpBuffer.array();
+                    //tmpBuffer = ByteBuffer.allocate(len);
+					//channelKeyFile.read(tmpBuffer);
+                    keyFile.read(bytes, 0, len);
+                    //bytes = tmpBuffer.array();
 					i += len;
 					int j = 0;
 					while (j < len) {
