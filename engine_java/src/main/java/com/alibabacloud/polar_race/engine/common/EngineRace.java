@@ -30,7 +30,7 @@ public class EngineRace extends AbstractEngine {
 	FileChannel channelKeyFile;
 	long countKeyFile = 0l;
 	//long countValueFile = 0l;
-	List<RandomAccessFile> valueFiles;
+	RandomAccessFile[] valueFiles;
 	@Override
 	public void open(String path) throws EngineException {
 		this.path = path + "/";
@@ -56,11 +56,10 @@ public class EngineRace extends AbstractEngine {
 				long start = System.currentTimeMillis();
 				keyFile = new RandomAccessFile(this.path + "keyFile", "r");
 				//channelKeyFile = keyFile.getChannel();
-				valueFiles = new ArrayList<RandomAccessFile>();
+				valueFiles = new RandomAccessFile[(int)FILENUM];
 				for (int i = 0; i < FILENUM; i++) {
-				    RandomAccessFile f = new RandomAccessFile(this.path + "valueFile" + i, "rw");
-				    f.seek(f.length());
-				    valueFiles.add(f);
+				    valueFiles[i] = new RandomAccessFile(this.path + "valueFile" + i, "rw");
+                    valueFiles[i].seek(valueFiles[i].length());
                 }
 				//valueFile = new RandomAccessFile(this.path + "valueFile.data", "r");
 				//position = new DiyHashMap(64000000);
@@ -122,11 +121,10 @@ public class EngineRace extends AbstractEngine {
 				keyFile = new RandomAccessFile(this.path + "keyFile", "rw");
 				countKeyFile = keyFile.length();
 				//channel = keyFile.getChannel();
-                valueFiles = new ArrayList<RandomAccessFile>();
-				for (int i = 0; i < FILENUM; i++) {
-				    RandomAccessFile f = new RandomAccessFile(this.path + "valueFile" + i, "rw");
-				    f.seek(f.length());
-				    valueFiles.add(f);
+                valueFiles = new RandomAccessFile[(int)FILENUM];
+                for (int i = 0; i < FILENUM; i++) {
+                    valueFiles[i] = new RandomAccessFile(this.path + "valueFile" + i, "rw");
+                    valueFiles[i].seek(valueFiles[i].length());
                 }
 				readyForWrite = true;
 			} catch (Exception e) {
@@ -154,8 +152,7 @@ public class EngineRace extends AbstractEngine {
 				fileIndex += FILENUM;
 			}
 			long pos;
-			RandomAccessFile f = valueFiles.get(fileIndex);
-			synchronized (f) {
+			synchronized (valueFiles[fileIndex]) {
 //                if (countValueFile % MAPSIZE == 0) {
 //                    buffValueFile = valueFile.getChannel().map(FileChannel.MapMode.READ_WRITE, countValueFile, MAPSIZE);
 //                }
@@ -166,8 +163,8 @@ public class EngineRace extends AbstractEngine {
 //                if (countValueFile % MAPSIZE == 0) {
 //                    buffValueFile.force();
 //                }
-                pos = f.length();
-				f.write(value);
+                pos = valueFiles[fileIndex].length();
+                valueFiles[fileIndex].write(value);
 			}
 			byte[] newKey = new byte[12];
 			for (int i = 0; i < 8; i++) {
@@ -220,15 +217,14 @@ public class EngineRace extends AbstractEngine {
 		if (fileIndex < 0) {
 			fileIndex += FILENUM;
 		}
-		RandomAccessFile f = valueFiles.get(fileIndex);
 		byte[] value = new byte[4 * 1024];
         //System.out.println(tmpPos >>> 32);
 		//System.out.println(valueFileIndex);
         //System.out.println(pos);
 		try {
-			synchronized (f) {
-				f.seek(tmpPos);
-				f.read(value);
+			synchronized (valueFiles[fileIndex]) {
+                valueFiles[fileIndex].seek(tmpPos);
+                valueFiles[fileIndex].read(value);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
