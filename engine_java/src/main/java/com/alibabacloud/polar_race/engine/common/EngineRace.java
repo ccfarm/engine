@@ -53,6 +53,7 @@ public class EngineRace extends AbstractEngine {
 	synchronized public void readyForRead() {
 		if (!readyForRead) {
 			try {
+				long start = System.currentTimeMillis();
 				keyFile = new RandomAccessFile(this.path + "keyFile", "r");
 				//channelKeyFile = keyFile.getChannel();
 				valueFiles = new ArrayList<RandomAccessFile>();
@@ -104,6 +105,7 @@ public class EngineRace extends AbstractEngine {
 						j += 12;
 					}
 				}
+				System.out.println("readyForReadCost: " + (System.currentTimeMillis() - start));
 				readyForRead = true;
 			} catch (Exception e) {
 				e.printStackTrace();
