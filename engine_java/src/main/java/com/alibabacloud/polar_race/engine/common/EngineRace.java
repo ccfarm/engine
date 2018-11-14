@@ -17,7 +17,7 @@ import java.util.List;
 public class EngineRace extends AbstractEngine {
 	final static long MAPSIZE = 12l * 64 * 1000 * 1000;
 	//final static long FILESIZE =  4 * 1024 * 1024 * 1024;
-    final static long FILENUM =  4096;
+    final static long FILENUM =  1024;
 	String path;
 	//DiyHashMap position;
 	//LongLongHashMap position;
