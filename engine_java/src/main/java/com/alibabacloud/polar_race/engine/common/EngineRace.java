@@ -184,10 +184,10 @@ public class EngineRace extends AbstractEngine {
             }
 			synchronized (keyFile) {
 				buffKeyFile.put(newKey);
-				countKeyFile += 12;
-				if (countKeyFile % (3l * 1024) == 0) {
-					buffKeyFile.force();
-				}
+				// countKeyFile += 12;
+				// if (countKeyFile % (3l * 1024) == 0) {
+				// 	buffKeyFile.force();
+				// }
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
