@@ -28,7 +28,7 @@ public class EngineRace extends AbstractEngine {
 	boolean readyForRead = false;
 	boolean readyForWrite = false;
 	FileChannel channelKeyFile;
-	//long countKeyFile = 0l;
+	long countKeyFile = 0l;
 	//long countValueFile = 0l;
 	RandomAccessFile[] valueFiles;
 	@Override
@@ -109,7 +109,7 @@ public class EngineRace extends AbstractEngine {
 		if (!readyForWrite) {
 			try {
 				keyFile = new RandomAccessFile(this.path + "keyFile", "rw");
-				long countKeyFile = 0;
+				countKeyFile = 0;
 				if (keyFile.length() == MAPSIZE) {
                     byte[] bytes = new byte[(int) MAPSIZE];
                     keyFile.read(bytes);
@@ -184,6 +184,10 @@ public class EngineRace extends AbstractEngine {
             }
 			synchronized (keyFile) {
 				buffKeyFile.put(newKey);
+				countKeyFile += 12;
+				if (countKeyFile % (3l * 1024) == 0) {
+					buffKeyFile.force();
+				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
