@@ -1,5 +1,4 @@
 // Copyright [2018] Alibaba Cloud All rights reserved
-
 #include "engine_race.h"
 
 namespace polar_race {
