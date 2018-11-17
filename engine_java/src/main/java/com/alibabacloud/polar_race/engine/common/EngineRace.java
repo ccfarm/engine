@@ -22,7 +22,8 @@ public class EngineRace extends AbstractEngine {
 	//DiyHashMap position;
 	//LongLongHashMap position;
     //LongIntHashMap position;
-	AVLTree position;
+	//AVLTree position;
+	BPlusTree position;
 	RandomAccessFile keyFile;
 	MappedByteBuffer buffKeyFile;
 	//MappedByteBuffer buffValueFile;
@@ -66,7 +67,7 @@ public class EngineRace extends AbstractEngine {
 				//position = new DiyHashMap(64000000);
 				//position = new DiyHashMap(3);
 				//position = new LongIntHashMap(64000000, 0.99);
-				position = new AVLTree();
+				position = new BPlusTree();
                 //position = new LongLongHashMap();
 				int length = (int) keyFile.length();
 				//System.out.println(length);
