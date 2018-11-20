@@ -21,18 +21,20 @@ public class EngineRace extends AbstractEngine {
 	String path;
 	//DiyHashMap position;
 	//LongLongHashMap position;
-    //LongIntHashMap position;
+    LongIntHashMap position;
 	//AVLTree position;
-	BPlusTree position;
+	//BPlusTree position;
 	RandomAccessFile keyFile;
 	MappedByteBuffer buffKeyFile;
 	//MappedByteBuffer buffValueFile;
 	boolean readyForRead = false;
 	boolean readyForWrite = false;
-	FileChannel channelKeyFile;
+	boolean readyForRange = false;
+	//FileChannel channelKeyFile;
 	long countKeyFile = 0l;
 	//long countValueFile = 0l;
 	RandomAccessFile[] valueFiles;
+	qsortStore qsortStore;
 	@Override
 	public void open(String path) throws EngineException {
 		this.path = path + "/";
@@ -61,13 +63,12 @@ public class EngineRace extends AbstractEngine {
 				valueFiles = new RandomAccessFile[(int)FILENUM];
 				for (int i = 0; i < FILENUM; i++) {
 				    valueFiles[i] = new RandomAccessFile(this.path + "valueFile" + i, "rw");
-                    valueFiles[i].seek(valueFiles[i].length());
                 }
 				//valueFile = new RandomAccessFile(this.path + "valueFile.data", "r");
 				//position = new DiyHashMap(64000000);
 				//position = new DiyHashMap(3);
-				//position = new LongIntHashMap(64000000, 0.99);
-				position = new BPlusTree();
+				position = new LongIntHashMap(64000000, 0.99);
+				//position = new BPlusTree();
                 //position = new LongLongHashMap();
 				int length = (int) keyFile.length();
 				//System.out.println(length);
@@ -145,6 +146,45 @@ public class EngineRace extends AbstractEngine {
 			System.out.println("------");
 		}
 	}
+
+	synchronized public void readyForRange() {
+	    if (!readyForRange) {
+	        try {
+                qsortStore = new qsortStore(path);
+                keyFile = new RandomAccessFile(this.path + "keyFile", "r");
+                int length = (int) keyFile.length();
+                byte[] bytes = new byte[3 * 4 * 1024];
+                int len = 3 * 4 * 1024;
+                int i = 0;
+                while (i < length) {
+                    //tmpBuffer = ByteBuffer.allocate(len);
+                    //channelKeyFile.read(tmpBuffer);
+                    keyFile.read(bytes);
+                    //bytes = tmpBuffer.array();
+                    i += 3 * 4 * 1024;
+                    int j = 0;
+                    while (j < len) {
+                        long tmpKey = 0;
+                        for (int k = 0; k < 8; k++) {
+                            tmpKey <<= 8;
+                            tmpKey |= (bytes[j + k] & 0xff);
+                        }
+                        int posInt = 0;
+                        for (int k = 8; k < 12; k++) {
+                            posInt <<= 8;
+                            posInt |= (bytes[j + k] & 0xff);
+                        }
+                        qsortStore.put(tmpKey, posInt);
+                        j += 12;
+                    }
+                }
+                qsortStore.sort();
+            } catch (Exception e) {
+	            e.printStackTrace();
+            }
+	        readyForRange = true;
+        }
+    }
 	
 	@Override
 	public void write(byte[] key, byte[] value) throws EngineException {
@@ -209,7 +249,7 @@ public class EngineRace extends AbstractEngine {
 		}
 		//System.out.println(tmpKey);
 		//System.out.println(position);
-		long posInt = position.get(tmpKey);
+		long posInt = position.getOrDefault(tmpKey, -1);
 		if (posInt == -1) {
 			//for (int k = 0; k < 8; k++) {
 				//System.out.print(key[k]);
@@ -241,6 +281,10 @@ public class EngineRace extends AbstractEngine {
 	
 	@Override
 	public void range(byte[] lower, byte[] upper, AbstractVisitor visitor) throws EngineException {
+        if (!readyForRange) {
+            readyForRange();
+            qsortStore.range(visitor);
+        }
 	}
 	
 	@Override
