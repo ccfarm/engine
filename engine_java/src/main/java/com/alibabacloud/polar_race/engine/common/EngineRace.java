@@ -5,6 +5,7 @@ import com.alibabacloud.polar_race.engine.common.exceptions.EngineException;
 import com.alibabacloud.polar_race.engine.common.exceptions.RetCodeEnum;
 import com.carrotsearch.hppc.LongIntHashMap;
 import com.carrotsearch.hppc.LongLongHashMap;
+import com.carrotsearch.hppc.cursors.LongIntCursor;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -100,7 +101,27 @@ public class EngineRace extends AbstractEngine {
 						j += 12;
 					}
 				}
-				System.out.println("readyForReadCost: " + (System.currentTimeMillis() - start));
+
+
+
+				keyFile = new RandomAccessFile(this.path + "keyFilePlus", "rw");
+                buffKeyFile = keyFile.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, MAPSIZE);
+                java.util.Iterator< LongIntCursor >  iter = position.iterator();
+                for (LongIntCursor kv : position) {
+                    byte[] key = Util.longToBytes(kv.key);
+                    byte[] newKey = new byte[12];
+                    for (int j = 0; j < 8; j++) {
+                        newKey[j] = key[j];
+                    }
+                    for (int j = 0; j < 4; j++) {
+                        int offset = 32 - (j + 1) * 8;
+                        newKey[8 + j] = (byte) ((kv.value >>> offset) & 0xff);
+                    }
+                    buffKeyFile.put(newKey);
+                }
+
+
+                System.out.println("readyForReadCost: " + (System.currentTimeMillis() - start));
 				readyForRead = true;
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -153,7 +174,7 @@ public class EngineRace extends AbstractEngine {
 	    if (!readyForRange) {
 	        try {
                 qsortStore = new qsortStore(path);
-                keyFile = new RandomAccessFile(this.path + "keyFile", "r");
+                keyFile = new RandomAccessFile(this.path + "keyFilePlus", "r");
                 int length = (int) keyFile.length();
                 byte[] bytes = new byte[3 * 4 * 1024];
                 int len = 3 * 4 * 1024;
@@ -204,10 +225,6 @@ public class EngineRace extends AbstractEngine {
                 Util.printBytes(key);
                 Util.printBytes(value);
             }
-        }
-        if (key[0] == (byte)48  && key[1] == (byte)48 && key[2] == (byte)49) {
-            Util.printBytes(key);
-            Util.printBytes(value);
         }
 		try {
 		    long tmpKey = 0;
