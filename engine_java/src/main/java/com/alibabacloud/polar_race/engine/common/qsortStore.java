@@ -13,8 +13,8 @@ public class qsortStore {
     public long[] keys;
     public int[] position;
     final private static int BUFFERSIZE = 100000;
-    long[] bkeys = new long[BUFFERSIZE];
-    byte[][] bvalues = new byte[BUFFERSIZE][4096];
+    volatile long[] bkeys = new long[BUFFERSIZE];
+    volatile byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
     qsortStore(String path) {
         size = 0;
