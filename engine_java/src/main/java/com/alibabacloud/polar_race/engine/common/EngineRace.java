@@ -195,16 +195,16 @@ public class EngineRace extends AbstractEngine {
 	
 	@Override
 	public void write(byte[] key, byte[] value) throws EngineException {
-	    synchronized (this) {
+		if (!readyForWrite) {
+			readyForWrite();
+		}
+        synchronized (this) {
             if (count < 100) {
                 count += 1;
                 Util.printBytes(key);
                 Util.printBytes(value);
             }
         }
-		if (!readyForWrite) {
-			readyForWrite();
-		}
 		try {
 		    long tmpKey = 0;
 			for (int i = 0; i < 8; i++) {

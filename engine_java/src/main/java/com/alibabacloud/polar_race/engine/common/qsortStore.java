@@ -37,8 +37,13 @@ public class qsortStore {
     public void sort() {
         qsort(0, size-1);
         System.out.println("sort__");
+        for (int i = 0; i < 100; i++) {
+            System.out.println(keys[i]);
+            Util.printBytes(Util.longToBytes(keys[i]));
+        }
         for (int i = size - 100; i < size; i++) {
             System.out.println(keys[i]);
+            Util.printBytes(Util.longToBytes(keys[i]));
         }
         System.out.println("sort__");
     }
@@ -127,6 +132,10 @@ public class qsortStore {
                     Util.printBytes(bvalues[i % BUFFERSIZE]);
                 }
                 visitor.visit(_key, bvalues[i % BUFFERSIZE]);
+                if (count < 100) {
+                    System.out.println("pass");
+                }
+
             }
             i += 1;
         }
