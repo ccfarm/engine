@@ -94,6 +94,7 @@ public class EngineRace extends AbstractEngine {
 							posInt <<= 8;
                             posInt |= (bytes[j + k] & 0xff);
 						}
+                        if (tmpKey == 0 && posInt == 0) break;
 						position.put(tmpKey, posInt);
 						j += 12;
 					}
@@ -156,6 +157,7 @@ public class EngineRace extends AbstractEngine {
                 byte[] bytes = new byte[3 * 4 * 1024];
                 int len = 3 * 4 * 1024;
                 int i = 0;
+
                 while (i < length) {
                     //tmpBuffer = ByteBuffer.allocate(len);
                     //channelKeyFile.read(tmpBuffer);
@@ -174,6 +176,7 @@ public class EngineRace extends AbstractEngine {
                             posInt <<= 8;
                             posInt |= (bytes[j + k] & 0xff);
                         }
+                        if (tmpKey == 0 && posInt == 0) break;
                         qsortStore.put(tmpKey, posInt);
                         j += 12;
                     }
@@ -182,7 +185,10 @@ public class EngineRace extends AbstractEngine {
             } catch (Exception e) {
 	            e.printStackTrace();
             }
-	        readyForRange = true;
+            readyForRange = true;
+            System.out.println("------");
+            System.out.println("readyForRange");
+            System.out.println("------");
         }
     }
 	
@@ -283,8 +289,8 @@ public class EngineRace extends AbstractEngine {
 	public void range(byte[] lower, byte[] upper, AbstractVisitor visitor) throws EngineException {
         if (!readyForRange) {
             readyForRange();
-            qsortStore.range(visitor);
         }
+        qsortStore.range(visitor);
 	}
 	
 	@Override

@@ -11,15 +11,15 @@ public class qsortStore {
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 1000;
+    final private static int BUFFERSIZE = 100000;
     long[] bkeys = new long[BUFFERSIZE];
-    byte[] bcounts = new byte[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
     qsortStore(String path) {
         size = 0;
         keys = new long[64000000];
         position = new int[64000000];
+        valueFiles = new RandomAccessFile[(int)EngineRace.FILENUM];
         for (int i = 0; i < EngineRace.FILENUM; i++) {
             try {
                 valueFiles[i] = new RandomAccessFile(path + "valueFile" + i, "rw");
@@ -50,7 +50,7 @@ public class qsortStore {
                 position[i] = position[j];
                 i += 1;
             }
-            while (keys[i] <= t2 && i < j) {
+            while (keys[i] <= t1 && i < j) {
                 i += 1;
             }
             if (i < j) {
@@ -66,40 +66,31 @@ public class qsortStore {
         if (i < r) qsort(i, r);
         if (l < j) qsort(l, j);
     }
-    synchronized private boolean waitFor(int i) {
-        if (bkeys[i % BUFFERSIZE] != 0 && bcounts[i % BUFFERSIZE] < 64) return false;
-        bkeys[i % BUFFERSIZE] = keys[i];
-        bcounts[i % BUFFERSIZE] = 0;
-        long tmpPos = position[i];
-        tmpPos <<= 12;
-        int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
-        if (fileIndex < 0) {
-            fileIndex += EngineRace.FILENUM;
-        }
-        try {
-            synchronized (valueFiles[fileIndex]) {
-                valueFiles[fileIndex].seek(tmpPos);
-                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return true;
-    }
 
     public void range(AbstractVisitor visitor) {
         for (int i = 0; i < size; i++) {
             byte[] _key = new byte[8];
-            if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                while (!waitFor(i)) ;
-            }
-            for (int j = 0; j < 8; i++) {
+            for (int j = 0; j < 8; j++) {
                 int offset = 64 - (j + 1) * 8;
-                _key[i] = (byte) ((keys[i] >> offset) & 0xff);
+                _key[j] = (byte) ((keys[i] >> offset) & 0xff);
             }
-            visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             synchronized (this) {
-                bcounts[i % BUFFERSIZE] += 1;
+                if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                    bkeys[i % BUFFERSIZE] = keys[i];
+                    long tmpPos = position[i];
+                    tmpPos <<= 12;
+                    int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
+                    if (fileIndex < 0) {
+                        fileIndex += EngineRace.FILENUM;
+                    }
+                    try {
+                        valueFiles[fileIndex].seek(tmpPos);
+                        valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             }
         }
     }
