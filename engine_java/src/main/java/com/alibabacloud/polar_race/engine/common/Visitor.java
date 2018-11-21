@@ -8,11 +8,11 @@ public class Visitor extends AbstractVisitor {
                 for (int k = 0; k < 8; k++) {
                     System.out.print(key[k]);
                 }
-                System.out.println("");
+                System.out.println("not pass");
                 for (int k = 0; k < 8; k++) {
                     System.out.print(value[k]);
                 }
-                System.out.println("");
+                System.out.println("not pass");
                 break;
             }
             //System.out.println("pass");
