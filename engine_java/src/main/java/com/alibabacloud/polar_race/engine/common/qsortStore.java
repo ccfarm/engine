@@ -6,15 +6,17 @@ import com.carrotsearch.hppc.LongIntHashMap;
 
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.util.TreeMap;
 
 public class qsortStore {
     static int count = 0;
+    static int countIo = 0;
     public int size;
     public long[] keys;
     public int[] position;
     final private static int BUFFERSIZE = 100000;
-    volatile long[] bkeys = new long[BUFFERSIZE];
-    volatile byte[][] bvalues = new byte[BUFFERSIZE][4096];
+    long[] bkeys = new long[BUFFERSIZE];
+    byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
     qsortStore(String path) {
         size = 0;
@@ -110,8 +112,11 @@ public class qsortStore {
             }
             last = keys[i];
             byte[] _key = Util.longToBytes(keys[i]);
+            boolean flag = false;
             synchronized (this) {
                 if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                    flag = true;
+                    countIo += 1;
                     bkeys[i % BUFFERSIZE] = keys[i];
                     long tmpPos = position[i];
                     tmpPos <<= 12;
@@ -135,9 +140,17 @@ public class qsortStore {
                 if (count < 100) {
                     System.out.println("pass");
                 }
-
+            }
+            try {
+                if (flag) {
+                    Thread.yield();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
             i += 1;
         }
+        System.out.println("countIo" + countIo);
+        System.out.println("size" + size);
     }
 }
