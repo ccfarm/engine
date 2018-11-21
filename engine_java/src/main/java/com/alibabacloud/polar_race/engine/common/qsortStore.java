@@ -66,9 +66,31 @@ public class qsortStore {
         if (i < r) qsort(i, r);
         if (l < j) qsort(l, j);
     }
+    private int find(long target) {
+        int i = 0;
+        int j = size - 1;
+        while (i <= j) {
+            int m = (i + j) / 2;
+            if (keys[m] == target) {
+                return m;
+            } else if (keys[m] < target) {
+                i = m + 1;
+            } else {
+                j = m - 1;
+            }
+        }
+        if (j < 0) {
+            return 0;
+        } else if (target > keys[j]) {
+            return i;
+        } else {
+            return j;
+        }
+    }
 
-    public void range(AbstractVisitor visitor) {
-        for (int i = 0; i < size; i++) {
+    public void range(long l, long r, AbstractVisitor visitor) {
+        int i = find(l);
+        while (i < size && keys[i] < r) {
             byte[] _key = new byte[8];
             for (int j = 0; j < 8; j++) {
                 int offset = 64 - (j + 1) * 8;
@@ -92,6 +114,7 @@ public class qsortStore {
                 }
                 visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             }
+            i += 1;
         }
     }
 }

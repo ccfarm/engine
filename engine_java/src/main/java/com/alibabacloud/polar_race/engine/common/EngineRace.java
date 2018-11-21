@@ -290,7 +290,19 @@ public class EngineRace extends AbstractEngine {
         if (!readyForRange) {
             readyForRange();
         }
-        qsortStore.range(visitor);
+        long l;
+        long r;
+        if (lower == null) {
+            l = Long.MIN_VALUE;
+        } else {
+            l = Util.bytesToLong(lower);
+        }
+        if (upper == null) {
+            r = Long.MAX_VALUE;
+        } else {
+            r = Util.bytesToLong(upper);
+        }
+        qsortStore.range(l, r, visitor);
 	}
 	
 	@Override
