@@ -8,6 +8,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 
 public class qsortStore {
+    static int count = 0;
     public int size;
     public long[] keys;
     public int[] position;
@@ -42,7 +43,7 @@ public class qsortStore {
         long t1 = keys[i];
         int t2 = position[i];
         while (i < j) {
-            while (keys[j] >= t1 && i < j) {
+            while (Util.compare(keys[j], t1) >= 0 && i < j) {
                 j -= 1;
             }
             if (i < j) {
@@ -50,7 +51,7 @@ public class qsortStore {
                 position[i] = position[j];
                 i += 1;
             }
-            while (keys[i] <= t1 && i < j) {
+            while (Util.compare(keys[i], t1) <= 0 && i < j) {
                 i += 1;
             }
             if (i < j) {
@@ -71,9 +72,10 @@ public class qsortStore {
         int j = size - 1;
         while (i <= j) {
             int m = (i + j) / 2;
-            if (keys[m] == target) {
+            long cmp = Util.compare(keys[m], target);
+            if (cmp == 0l) {
                 return m;
-            } else if (keys[m] < target) {
+            } else if (cmp < 0l) {
                 i = m + 1;
             } else {
                 j = m - 1;
@@ -81,7 +83,7 @@ public class qsortStore {
         }
         if (j < 0) {
             return 0;
-        } else if (target > keys[j]) {
+        } else if (Util.compare(keys[j], target) < 0l) {
             return i;
         } else {
             return j;
@@ -90,7 +92,7 @@ public class qsortStore {
 
     public void range(long l, long r, AbstractVisitor visitor) {
         int i = find(l);
-        while (i < size && keys[i] < r) {
+        while (i < size && Util.compare(keys[i], r) < 0) {
             byte[] _key = new byte[8];
             for (int j = 0; j < 8; j++) {
                 int offset = 64 - (j + 1) * 8;
@@ -111,6 +113,11 @@ public class qsortStore {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                }
+                if (count < 100) {
+                    count += 1;
+                    Util.printBytes(_key);
+                    Util.printBytes(bvalues[i % BUFFERSIZE]);
                 }
                 visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             }

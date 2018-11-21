@@ -293,12 +293,12 @@ public class EngineRace extends AbstractEngine {
         long l;
         long r;
         if (lower == null) {
-            l = Long.MIN_VALUE;
+            l = 0;
         } else {
             l = Util.bytesToLong(lower);
         }
         if (upper == null) {
-            r = Long.MAX_VALUE;
+            r = -1l;
         } else {
             r = Util.bytesToLong(upper);
         }
