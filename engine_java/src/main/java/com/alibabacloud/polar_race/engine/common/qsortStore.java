@@ -14,7 +14,7 @@ public class qsortStore {
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 100000;
+    final private static int BUFFERSIZE = 10;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
@@ -113,7 +113,7 @@ public class qsortStore {
             last = keys[i];
             byte[] _key = Util.longToBytes(keys[i]);
             boolean flag = false;
-            synchronized (this) {
+            synchronized (bvalues[i % BUFFERSIZE]) {
                 if (bkeys[i % BUFFERSIZE] != keys[i]) {
                     flag = true;
                     countIo += 1;
