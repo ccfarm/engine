@@ -1,6 +1,7 @@
 package com.alibabacloud.polar_race.engine.common;
 
 import com.alibabacloud.polar_race.engine.common.EngineRace;
+import com.carrotsearch.hppc.LongIntHashMap;
 
 public class ThreadEngine extends Thread{
     byte name;
@@ -10,14 +11,11 @@ public class ThreadEngine extends Thread{
     @Override
     public void run() {
         try {
-            for (int i = 10000000; i < 10001024; i++) {
-                byte[] key = new byte[8];
+            for (long i = Long.MIN_VALUE; i < Long.MAX_VALUE / 2l; i+= Long.MAX_VALUE / 100l) {
+                byte[] key = Util.longToBytes(i);
                 byte[] value = new byte[4 * 1024];
-                int mod = 10000000;
                 for (int j = 0; j < 8; j++) {
-                    key[j] = (byte)(i / mod % 10);
-                    value[j] = (byte)(i / mod % 10);
-                    mod /= 10;
+                    value[j] = key[j];
                 }
                 Test.client.write(key, value);
             }

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EngineRace extends AbstractEngine {
+    static int count = 0;
 	final static long MAPSIZE = 12l * 64 * 1000 * 1000;
 	//final static long FILESIZE =  4 * 1024 * 1024 * 1024;
     final static long FILENUM =  1024;
@@ -194,6 +195,13 @@ public class EngineRace extends AbstractEngine {
 	
 	@Override
 	public void write(byte[] key, byte[] value) throws EngineException {
+	    synchronized (this) {
+            if (count < 100) {
+                count += 1;
+                Util.printBytes(key);
+                Util.printBytes(value);
+            }
+        }
 		if (!readyForWrite) {
 			readyForWrite();
 		}

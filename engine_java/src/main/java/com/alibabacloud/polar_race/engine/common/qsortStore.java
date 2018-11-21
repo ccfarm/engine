@@ -36,6 +36,11 @@ public class qsortStore {
     }
     public void sort() {
         qsort(0, size-1);
+        System.out.println("sort__");
+        for (int i = size - 100; i < size; i++) {
+            System.out.println(keys[i]);
+        }
+        System.out.println("sort__");
     }
     private void qsort(int l, int r) {
         int i = l;
@@ -92,12 +97,14 @@ public class qsortStore {
 
     public void range(long l, long r, AbstractVisitor visitor) {
         int i = find(l);
+        long last = 0;
         while (i < size && Util.compare(keys[i], r) < 0) {
-            byte[] _key = new byte[8];
-            for (int j = 0; j < 8; j++) {
-                int offset = 64 - (j + 1) * 8;
-                _key[j] = (byte) ((keys[i] >> offset) & 0xff);
+            if (last == keys[i]) {
+                i += 1;
+                continue;
             }
+            last = keys[i];
+            byte[] _key = Util.longToBytes(keys[i]);
             synchronized (this) {
                 if (bkeys[i % BUFFERSIZE] != keys[i]) {
                     bkeys[i % BUFFERSIZE] = keys[i];
