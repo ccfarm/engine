@@ -15,9 +15,9 @@ public class Util {
             return a - b;
         } else {
             if (a < 0) {
-                return -1l;
-            } else {
                 return 1l;
+            } else {
+                return -1l;
             }
         }
     }
