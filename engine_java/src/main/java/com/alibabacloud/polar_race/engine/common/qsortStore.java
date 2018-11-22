@@ -115,10 +115,9 @@ public class qsortStore {
             if (bkeys[i % BUFFERSIZE] != keys[i]) {
                 //locks[i % BUFFERSIZE].getAndIncrement();
                 flag = true;
-                synchronized (bvalues[i % BUFFERSIZE]){
+                if (locks[i % BUFFERSIZE].getAndIncrement() == 0){
                     if (bkeys[i % BUFFERSIZE] != keys[i]) {
                         countIo += 1;
-
                         long tmpPos = position[i];
                         tmpPos <<= 12;
                         int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
@@ -134,11 +133,10 @@ public class qsortStore {
                         bkeys[i % BUFFERSIZE] = keys[i];
                     }
                 }
-                //locks[i % BUFFERSIZE].getAndDecrement();
+                locks[i % BUFFERSIZE].getAndDecrement();
             }
-            //while (locks[i % BUFFERSIZE].get() > 0);
+            while (locks[i % BUFFERSIZE].get() != 0);
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
-
 //            try {
 //                if (flag) {
 //                    //Thread.sleep(1);

@@ -3,7 +3,7 @@ package com.alibabacloud.polar_race.engine.common;
 public class TestDHM {
     public static void main(String[] args) {
         int[] ints = new int[100];
-        System.out.println(ints[99]);
+        System.out.println(ints[0]);
 //       System.out.println(Math.random());
 //        BPlusTree map = new BPlusTree();
 //        //System.out.println(map.getClass() == DiyAVL.class);
