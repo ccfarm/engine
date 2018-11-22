@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EngineRace extends AbstractEngine {
-    static int count = 0;
 	final static long MAPSIZE = 12l * 64 * 1000 * 1000;
 	//final static long FILESIZE =  4 * 1024 * 1024 * 1024;
     final static long FILENUM =  1024;
@@ -58,8 +57,8 @@ public class EngineRace extends AbstractEngine {
 
 	synchronized public void readyForRead() {
 		if (!readyForRead) {
+            long start = System.currentTimeMillis();
 			try {
-				long start = System.currentTimeMillis();
 				keyFile = new RandomAccessFile(this.path + "keyFile", "r");
 				//channelKeyFile = keyFile.getChannel();
 				valueFiles = new RandomAccessFile[(int)FILENUM];
@@ -119,21 +118,17 @@ public class EngineRace extends AbstractEngine {
                     }
                     buffKeyFile.put(newKey);
                 }
-
-
-                System.out.println("readyForReadCost: " + (System.currentTimeMillis() - start));
 				readyForRead = true;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			System.out.println("------");
-			System.out.println("readyForRead");
-			System.out.println("------");
+            System.out.println("readyForReadCost: " + (System.currentTimeMillis() - start));
 		}
 	}
 
 	synchronized public void readyForWrite(){
 		if (!readyForWrite) {
+            long start = System.currentTimeMillis();
 			try {
 				keyFile = new RandomAccessFile(this.path + "keyFile", "rw");
 				countKeyFile = 0;
@@ -164,14 +159,13 @@ public class EngineRace extends AbstractEngine {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			System.out.println("------");
-			System.out.println("readyForWrite");
-			System.out.println("------");
+            System.out.println("readyForWriteCost: " + (System.currentTimeMillis() - start));
 		}
 	}
 
 	synchronized public void readyForRange() {
 	    if (!readyForRange) {
+            long start = System.currentTimeMillis();
 	        try {
                 qsortStore = new qsortStore(path);
                 keyFile = new RandomAccessFile(this.path + "keyFilePlus", "r");
@@ -208,9 +202,7 @@ public class EngineRace extends AbstractEngine {
 	            e.printStackTrace();
             }
             readyForRange = true;
-            System.out.println("------");
-            System.out.println("readyForRange");
-            System.out.println("------");
+            System.out.println("readyForRangeCost: " + (System.currentTimeMillis() - start));
         }
     }
 	
@@ -219,13 +211,6 @@ public class EngineRace extends AbstractEngine {
 		if (!readyForWrite) {
 			readyForWrite();
 		}
-        synchronized (this) {
-            if (count < 100) {
-                count += 1;
-                Util.printBytes(key);
-                Util.printBytes(value);
-            }
-        }
 		try {
 		    long tmpKey = 0;
 			for (int i = 0; i < 8; i++) {

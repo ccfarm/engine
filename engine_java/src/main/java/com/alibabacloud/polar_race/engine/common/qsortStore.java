@@ -9,12 +9,12 @@ import java.nio.channels.FileChannel;
 import java.util.TreeMap;
 
 public class qsortStore {
-    static int count = 0;
     static int countIo = 0;
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 150000;
+    //final private static int BUFFERSIZE = 150000;
+    final private static int BUFFERSIZE = 150;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
@@ -37,17 +37,9 @@ public class qsortStore {
         size += 1;
     }
     public void sort() {
+        long start = System.currentTimeMillis();
         qsort(0, size-1);
-        System.out.println("sort__");
-        for (int i = 0; i < 100; i++) {
-            System.out.println(keys[i]);
-            Util.printBytes(Util.longToBytes(keys[i]));
-        }
-        for (int i = size - 100; i < size; i++) {
-            System.out.println(keys[i]);
-            Util.printBytes(Util.longToBytes(keys[i]));
-        }
-        System.out.println("sort__");
+        System.out.println("sortCost: " + (System.currentTimeMillis() - start));
     }
     private void qsort(int l, int r) {
         int i = l;
@@ -131,15 +123,7 @@ public class qsortStore {
                         e.printStackTrace();
                     }
                 }
-                if (count < 100) {
-                    count += 1;
-                    Util.printBytes(_key);
-                    Util.printBytes(bvalues[i % BUFFERSIZE]);
-                }
                 visitor.visit(_key, bvalues[i % BUFFERSIZE]);
-                if (count < 100) {
-                    System.out.println("pass");
-                }
             }
 //            try {
 //                if (flag) {
@@ -151,6 +135,5 @@ public class qsortStore {
             i += 1;
         }
         System.out.println("countIo" + countIo);
-        System.out.println("size" + size);
     }
 }
