@@ -18,7 +18,7 @@ public class qsortStore {
     public long[] keys;
     public int[] position;
     final private static int BUFFERSIZE = 150000;
-    //final private static int BUFFERSIZE = 50;
+    //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
@@ -113,12 +113,12 @@ public class qsortStore {
             byte[] _key = Util.longToBytes(keys[i]);
             boolean flag = false;
             if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                locks[i % BUFFERSIZE].getAndIncrement();
+                //locks[i % BUFFERSIZE].getAndIncrement();
                 flag = true;
                 synchronized (bvalues[i % BUFFERSIZE]){
                     if (bkeys[i % BUFFERSIZE] != keys[i]) {
                         countIo += 1;
-                        bkeys[i % BUFFERSIZE] = keys[i];
+
                         long tmpPos = position[i];
                         tmpPos <<= 12;
                         int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
@@ -131,21 +131,22 @@ public class qsortStore {
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
+                        bkeys[i % BUFFERSIZE] = keys[i];
                     }
                 }
-                locks[i % BUFFERSIZE].getAndDecrement();
+                //locks[i % BUFFERSIZE].getAndDecrement();
             }
-            while (locks[i % BUFFERSIZE].get() > 0);
+            //while (locks[i % BUFFERSIZE].get() > 0);
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
 
-            try {
-                if (flag) {
-                    //Thread.sleep(1);
-                    Thread.yield();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+//            try {
+//                if (flag) {
+//                    //Thread.sleep(1);
+//                    Thread.yield();
+//                }
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
             i += 1;
         }
         System.out.println("countIo" + countIo);
