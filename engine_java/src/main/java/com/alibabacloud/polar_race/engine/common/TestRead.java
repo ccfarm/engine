@@ -9,7 +9,7 @@ public class TestRead {
         } catch (Exception e) {
             System.out.println(e);
         }
-        for (int i =0; i < 8; i++) {
+        for (int i =0; i < 3; i++) {
             ThreadRead t1 = new ThreadRead((byte)i);
             t1.start();
         }
