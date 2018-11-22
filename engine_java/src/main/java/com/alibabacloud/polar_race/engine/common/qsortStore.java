@@ -113,8 +113,8 @@ public class qsortStore {
             byte[] _key = Util.longToBytes(keys[i]);
             boolean flag = false;
             if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                flag = true;
                 if (locks[i % BUFFERSIZE].getAndIncrement() == 0) {
-                    flag = true;
                     countIo += 1;
                     bkeys[i % BUFFERSIZE] = keys[i];
                     long tmpPos = position[i];
@@ -135,14 +135,14 @@ public class qsortStore {
             while (locks[i % BUFFERSIZE].get() > 0);
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
 
-//            try {
-//                if (flag) {
-//                    //Thread.sleep(1);
-//                    //Thread.yield();
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
+            try {
+                if (flag) {
+                    //Thread.sleep(1);
+                    Thread.yield();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             i += 1;
         }
         System.out.println("countIo" + countIo);
