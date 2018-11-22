@@ -17,7 +17,7 @@ public class qsortStore {
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 150000;
+    final private static int BUFFERSIZE = 300000;
     //final private static int BUFFERSIZE = 50;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
@@ -135,14 +135,14 @@ public class qsortStore {
             while (locks[i % BUFFERSIZE].get() > 0);
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
 
-            try {
-                if (flag) {
-                    Thread.sleep(1);
-                    //Thread.yield();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+//            try {
+//                if (flag) {
+//                    //Thread.sleep(1);
+//                    //Thread.yield();
+//                }
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
             i += 1;
         }
         System.out.println("countIo" + countIo);
