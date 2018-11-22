@@ -14,7 +14,7 @@ public class qsortStore {
     public long[] keys;
     public int[] position;
     final private static int BUFFERSIZE = 150000;
-    //final private static int BUFFERSIZE = 150;
+    //final private static int BUFFERSIZE = 15;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
@@ -123,15 +123,16 @@ public class qsortStore {
                         e.printStackTrace();
                     }
                 }
-                visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             }
-//            try {
-//                if (flag) {
-//                    Thread.yield();
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
+            visitor.visit(_key, bvalues[i % BUFFERSIZE]);
+
+            try {
+                if (flag) {
+                    Thread.yield();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             i += 1;
         }
         System.out.println("countIo" + countIo);
