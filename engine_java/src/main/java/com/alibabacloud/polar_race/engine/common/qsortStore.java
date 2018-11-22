@@ -18,7 +18,7 @@ public class qsortStore {
     public long[] keys;
     public int[] position;
     final private static int BUFFERSIZE = 150000;
-    //final private static int BUFFERSIZE = 500;
+    //final private static int BUFFERSIZE = 50;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
@@ -137,7 +137,8 @@ public class qsortStore {
 
             try {
                 if (flag) {
-                    Thread.yield();
+                    Thread.sleep(1);
+                    //Thread.yield();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
