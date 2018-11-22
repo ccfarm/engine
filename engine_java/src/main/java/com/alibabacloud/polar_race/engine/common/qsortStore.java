@@ -7,8 +7,11 @@ import com.carrotsearch.hppc.LongIntHashMap;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class qsortStore {
+    Lock lock = new ReentrantLock();
     static int countIo = 0;
     public int size;
     public long[] keys;
@@ -105,7 +108,8 @@ public class qsortStore {
             last = keys[i];
             byte[] _key = Util.longToBytes(keys[i]);
             boolean flag = false;
-            synchronized (bvalues[i % BUFFERSIZE]) {
+            //synchronized (bvalues[i % BUFFERSIZE]) {
+            lock.lock();
                 if (bkeys[i % BUFFERSIZE] != keys[i]) {
                     flag = true;
                     countIo += 1;
@@ -123,7 +127,7 @@ public class qsortStore {
                         e.printStackTrace();
                     }
                 }
-            }
+            lock.unlock();
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
 
             try {
