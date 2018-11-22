@@ -11,7 +11,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class qsortStore {
-    Lock lock = new ReentrantLock();
+    Lock[] locks = new Lock[BUFFERSIZE];
     static int countIo = 0;
     public int size;
     public long[] keys;
@@ -22,6 +22,9 @@ public class qsortStore {
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
     qsortStore(String path) {
+        for (int i = 0; i < BUFFERSIZE; i++) {
+            locks[i] = new ReentrantLock(true);
+        }
         size = 0;
         keys = new long[64000000];
         position = new int[64000000];
@@ -108,8 +111,7 @@ public class qsortStore {
             last = keys[i];
             byte[] _key = Util.longToBytes(keys[i]);
             boolean flag = false;
-            //synchronized (bvalues[i % BUFFERSIZE]) {
-            lock.lock();
+            locks[i % BUFFERSIZE].lock();
                 if (bkeys[i % BUFFERSIZE] != keys[i]) {
                     flag = true;
                     countIo += 1;
@@ -127,7 +129,7 @@ public class qsortStore {
                         e.printStackTrace();
                     }
                 }
-            lock.unlock();
+            locks[i % BUFFERSIZE].unlock();
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
 
             try {
