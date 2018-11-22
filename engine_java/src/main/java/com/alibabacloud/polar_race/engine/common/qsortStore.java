@@ -113,21 +113,24 @@ public class qsortStore {
             byte[] _key = Util.longToBytes(keys[i]);
             boolean flag = false;
             if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                locks[i % BUFFERSIZE].getAndIncrement();
                 flag = true;
-                if (locks[i % BUFFERSIZE].getAndIncrement() == 0) {
-                    countIo += 1;
-                    bkeys[i % BUFFERSIZE] = keys[i];
-                    long tmpPos = position[i];
-                    tmpPos <<= 12;
-                    int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
-                    if (fileIndex < 0) {
-                        fileIndex += EngineRace.FILENUM;
-                    }
-                    try {
-                        valueFiles[fileIndex].seek(tmpPos);
-                        valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                synchronized (bvalues[i % BUFFERSIZE]){
+                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                        countIo += 1;
+                        bkeys[i % BUFFERSIZE] = keys[i];
+                        long tmpPos = position[i];
+                        tmpPos <<= 12;
+                        int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
+                        if (fileIndex < 0) {
+                            fileIndex += EngineRace.FILENUM;
+                        }
+                        try {
+                            valueFiles[fileIndex].seek(tmpPos);
+                            valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
                 locks[i % BUFFERSIZE].getAndDecrement();
