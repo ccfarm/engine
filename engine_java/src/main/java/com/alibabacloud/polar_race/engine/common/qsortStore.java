@@ -18,7 +18,7 @@ public class qsortStore {
     public long[] keys;
     public int[] position;
     final private static int BUFFERSIZE = 150000;
-    //final private static int BUFFERSIZE = 500;
+//    final private static int BUFFERSIZE = 1000;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
@@ -100,53 +100,37 @@ public class qsortStore {
             return j;
         }
     }
-
-    public void range(long l, long r, AbstractVisitor visitor) {
+    public void rangeWithOutRead(long l, long r, AbstractVisitor visitor) {
         int i = find(l);
-        long last = 0;
         while (i < size && Util.compare(keys[i], r) < 0) {
-            if (last == keys[i]) {
-                i += 1;
-                continue;
-            }
-            last = keys[i];
             byte[] _key = Util.longToBytes(keys[i]);
-            boolean flag = false;
-            if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                //locks[i % BUFFERSIZE].getAndIncrement();
-                flag = true;
-                if (locks[i % BUFFERSIZE].getAndIncrement() == 0){
-                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                        countIo += 1;
-                        long tmpPos = position[i];
-                        tmpPos <<= 12;
-                        int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
-                        if (fileIndex < 0) {
-                            fileIndex += EngineRace.FILENUM;
-                        }
-                        try {
-                            valueFiles[fileIndex].seek(tmpPos);
-                            valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        bkeys[i % BUFFERSIZE] = keys[i];
-                    }
-                }
-                while (bkeys[i % BUFFERSIZE] != keys[i]){
-                    Thread.yield();
-                };
-                locks[i % BUFFERSIZE].getAndDecrement();
-            }
+            while (bkeys[i % BUFFERSIZE] != keys[i]) Thread.yield();
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
-//            try {
-//                if (flag) {
-//                    //Thread.sleep(1);
-//                    Thread.yield();
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
+            i += 1;
+            //System.out.println(Thread.currentThread().getId() + "done" + i);
+        }
+
+    }
+    public void range(long l, long r, AbstractVisitor visitor) {
+        //Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+        int i = find(l);
+        while (i < size && Util.compare(keys[i], r) < 0) {
+            byte[] _key = Util.longToBytes(keys[i]);
+            countIo += 1;
+            long tmpPos = position[i];
+            tmpPos <<= 12;
+            int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
+            if (fileIndex < 0) {
+                fileIndex += EngineRace.FILENUM;
+            }
+            try {
+                valueFiles[fileIndex].seek(tmpPos);
+                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            bkeys[i % BUFFERSIZE] = keys[i];
+            visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             i += 1;
         }
         System.out.println("countIo" + countIo);
