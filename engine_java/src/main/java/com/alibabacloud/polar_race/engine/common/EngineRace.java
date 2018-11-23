@@ -14,8 +14,10 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class EngineRace extends AbstractEngine {
+	public AtomicInteger lock = new AtomicInteger(0);
 	final static long MAPSIZE = 12l * 64 * 1000 * 1000;
 	//final static long FILESIZE =  4 * 1024 * 1024 * 1024;
     final static long FILENUM =  1024;
@@ -316,7 +318,12 @@ public class EngineRace extends AbstractEngine {
         } else {
             r = Util.bytesToLong(upper);
         }
-        qsortStore.range(l, r, visitor);
+        if (lock.getAndIncrement() == 0) {
+            qsortStore.range(l, r, visitor);
+        } else {
+            qsortStore.rangeWithOutRead(l, r, visitor);
+        }
+        lock.getAndDecrement();
 	}
 	
 	@Override
