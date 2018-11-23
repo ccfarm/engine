@@ -133,7 +133,9 @@ public class qsortStore {
                         bkeys[i % BUFFERSIZE] = keys[i];
                     }
                 }
-                while (bkeys[i % BUFFERSIZE] != keys[i]);
+                while (bkeys[i % BUFFERSIZE] != keys[i]){
+                    Thread.yield();
+                };
                 locks[i % BUFFERSIZE].getAndDecrement();
             }
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
