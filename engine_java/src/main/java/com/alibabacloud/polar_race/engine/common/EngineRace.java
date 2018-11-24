@@ -38,8 +38,10 @@ public class EngineRace extends AbstractEngine {
 	//long countValueFile = 0l;
 	RandomAccessFile[] valueFiles;
 	qsortStore qsortStore;
+	long start;
 	@Override
 	public void open(String path) throws EngineException {
+		this.start = System.currentTimeMillis();
 		this.path = path + "/";
 		File curDir = new File(path);
 		if (!curDir.exists()) {
@@ -303,6 +305,7 @@ public class EngineRace extends AbstractEngine {
 	
 	@Override
 	public void range(byte[] lower, byte[] upper, AbstractVisitor visitor) throws EngineException {
+		long start = System.currentTimeMillis();
         if (!readyForRange) {
             readyForRange();
         }
@@ -324,6 +327,7 @@ public class EngineRace extends AbstractEngine {
             qsortStore.rangeWithOutRead(l, r, visitor);
         }
         lock.getAndDecrement();
+		System.out.println(Thread.currentThread().getId() + "RangeCost: " + (System.currentTimeMillis() - start));
 	}
 	
 	@Override
@@ -335,7 +339,7 @@ public class EngineRace extends AbstractEngine {
 //        } catch (Exception e) {
 //
 //        }
-
+		System.out.println("Cost: " + (System.currentTimeMillis() - this.start));
         System.out.println("------");
 		System.out.println("close");
         System.out.println("------");

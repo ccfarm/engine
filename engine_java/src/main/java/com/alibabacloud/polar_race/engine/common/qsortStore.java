@@ -139,7 +139,7 @@ public class qsortStore {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                bvalues[i % BUFFERSIZE].notify();
+                bvalues[i % BUFFERSIZE].notifyAll();
                 bkeys[i % BUFFERSIZE] = keys[i];
             }
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
