@@ -19,7 +19,7 @@ public class qsortStore {
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 1000;
+    final private static int BUFFERSIZE = 10000;
     //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] _bkeys = new byte[BUFFERSIZE][8];
