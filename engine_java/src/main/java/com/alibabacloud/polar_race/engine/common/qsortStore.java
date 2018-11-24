@@ -139,8 +139,8 @@ public class qsortStore {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                bvalues[i % BUFFERSIZE].notifyAll();
                 bkeys[i % BUFFERSIZE] = keys[i];
+                bvalues[i % BUFFERSIZE].notifyAll();
             }
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             i += 1;
