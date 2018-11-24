@@ -18,7 +18,7 @@ public class qsortStore {
     public long[] keys;
     public int[] position;
     final private static int BUFFERSIZE = 150000;
-//    final private static int BUFFERSIZE = 1000;
+    //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
@@ -104,7 +104,16 @@ public class qsortStore {
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
             byte[] _key = Util.longToBytes(keys[i]);
-            while (bkeys[i % BUFFERSIZE] != keys[i]) Thread.yield();
+            synchronized (bvalues[i % BUFFERSIZE]) {
+                if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                    try {
+                        bvalues[i % BUFFERSIZE].wait();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                bvalues[i % BUFFERSIZE].notifyAll();
+            }
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             i += 1;
             //System.out.println(Thread.currentThread().getId() + "done" + i);
@@ -123,13 +132,16 @@ public class qsortStore {
             if (fileIndex < 0) {
                 fileIndex += EngineRace.FILENUM;
             }
-            try {
-                valueFiles[fileIndex].seek(tmpPos);
-                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
-            } catch (Exception e) {
-                e.printStackTrace();
+            synchronized (bvalues[i % BUFFERSIZE]) {
+                try {
+                    valueFiles[fileIndex].seek(tmpPos);
+                    valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                bvalues[i % BUFFERSIZE].notify();
+                bkeys[i % BUFFERSIZE] = keys[i];
             }
-            bkeys[i % BUFFERSIZE] = keys[i];
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             i += 1;
         }
