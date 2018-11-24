@@ -122,7 +122,6 @@ public class qsortStore {
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
             countIo += 1;
-            byte[] _key = Util.longToBytes(keys[i]);
             long tmpPos = position[i];
             tmpPos <<= 12;
             int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
@@ -138,7 +137,7 @@ public class qsortStore {
             }
             bvalues.put(keys[i], value);
             bcount.put(keys[i], new AtomicInteger(1));
-            visitor.visit(_key, value);
+            visitor.visit(Util.longToBytes(keys[i]), value);
             i += 1;
         }
         System.out.println("countIo" + countIo);
