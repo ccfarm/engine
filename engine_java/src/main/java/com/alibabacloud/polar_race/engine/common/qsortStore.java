@@ -6,31 +6,30 @@ import com.carrotsearch.hppc.LongIntHashMap;
 
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class qsortStore {
-    AtomicInteger[] locks = new AtomicInteger[BUFFERSIZE];
+    //AtomicInteger[] locks = new AtomicInteger[BUFFERSIZE];
     static int countIo = 0;
     public int size;
     public long[] keys;
     public int[] position;
     final private static int BUFFERSIZE = 10000;
     //final private static int BUFFERSIZE = 500;
-    long[] bkeys = new long[BUFFERSIZE];
-    byte[][] _bkeys = new byte[BUFFERSIZE][8];
+    //long[] bkeys = new long[BUFFERSIZE];
+    //byte[][] _bkeys = new byte[BUFFERSIZE][8];
     //byte[][] bvalues = new byte[BUFFERSIZE][4096];
-    List<byte[]> bvalues = new ArrayList<byte[]>(BUFFERSIZE);
+    Map<Long, byte[]> bvalues = new HashMap<Long, byte[]>(BUFFERSIZE);
+    Map<Long, AtomicInteger> bcount = new HashMap<Long, AtomicInteger>(BUFFERSIZE);
     RandomAccessFile[] valueFiles;
     qsortStore(String path) {
-        for (int i = 0; i < BUFFERSIZE; i++) {
-            locks[i] = new AtomicInteger();
-            bvalues.add(new byte[4096]);
-        }
+//        for (int i = 0; i < BUFFERSIZE; i++) {
+//            locks[i] = new AtomicInteger();
+//            bvalues.add(new byte[4096]);
+//        }
         size = 0;
         keys = new long[64000000];
         position = new int[64000000];
@@ -108,32 +107,38 @@ public class qsortStore {
     public void rangeWithOutRead(long l, long r, AbstractVisitor visitor) {
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
-            while (bkeys[i % BUFFERSIZE] != keys[i]) Thread.yield();
-            visitor.visit(_bkeys[i % BUFFERSIZE], bvalues.get(i % BUFFERSIZE));
+            while (!bcount.containsKey(keys[i])) Thread.yield();
+            visitor.visit(Util.longToBytes(keys[i]), bvalues.get(keys[i]));
+            if (bcount.get(keys[i]).incrementAndGet() == 64) {
+                bcount.remove(keys[i]);
+                bvalues.remove(keys[i]);
+                //System.out.println(keys[i]);
+            }
             i += 1;
         }
 
     }
     public void range(long l, long r, AbstractVisitor visitor) {
-
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
             countIo += 1;
+            byte[] _key = Util.longToBytes(keys[i]);
             long tmpPos = position[i];
             tmpPos <<= 12;
             int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
             if (fileIndex < 0) {
                 fileIndex += EngineRace.FILENUM;
             }
+            byte[] value = new byte[4096];
             try {
                 valueFiles[fileIndex].seek(tmpPos);
-                valueFiles[fileIndex].read(bvalues.get(i % BUFFERSIZE));
+                valueFiles[fileIndex].read(value);
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            _bkeys[i % BUFFERSIZE] = Util.longToBytes(keys[i]);
-            bkeys[i % BUFFERSIZE] = keys[i];
-            visitor.visit(_bkeys[i % BUFFERSIZE], bvalues.get(i % BUFFERSIZE));
+            bvalues.put(keys[i], value);
+            bcount.put(keys[i], new AtomicInteger(1));
+            visitor.visit(_key, value);
             i += 1;
         }
         System.out.println("countIo" + countIo);
