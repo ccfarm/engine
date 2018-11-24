@@ -322,6 +322,7 @@ public class EngineRace extends AbstractEngine {
             r = Util.bytesToLong(upper);
         }
         if (lock.getAndIncrement() == 0) {
+			Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
             qsortStore.range(l, r, visitor);
         } else {
             qsortStore.rangeWithOutRead(l, r, visitor);

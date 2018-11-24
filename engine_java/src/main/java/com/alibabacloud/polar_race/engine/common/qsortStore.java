@@ -17,7 +17,7 @@ public class qsortStore {
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 150000;
+    final private static int BUFFERSIZE = 10000;
     //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
@@ -121,7 +121,7 @@ public class qsortStore {
 
     }
     public void range(long l, long r, AbstractVisitor visitor) {
-        //Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
             byte[] _key = Util.longToBytes(keys[i]);
