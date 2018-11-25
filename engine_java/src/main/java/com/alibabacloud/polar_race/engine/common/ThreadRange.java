@@ -9,6 +9,7 @@ public class ThreadRange extends Thread{
     public void run() {
         try {
             TestRange.client.range(null, null, new Visitor());
+            TestRange.client.range(null, null, new Visitor());
         }
         catch (Exception e){
             e.printStackTrace();

@@ -7,14 +7,8 @@ public class Visitor extends AbstractVisitor {
             if (key[j] != value[j]) {
                 System.out.println(key[j] + " != " + value[j]);
                 Util.printBytes(key);
-                Util.printBytes(value);
-                for (int k = 0; k < 8; k++) {
-                    System.out.print(key[k]);
-                }
                 System.out.println("not pass key");
-                for (int k = 0; k < 8; k++) {
-                    System.out.print(value[k]);
-                }
+                Util.printBytes(value);
                 System.out.println("not pass value");
                 break;
             }
