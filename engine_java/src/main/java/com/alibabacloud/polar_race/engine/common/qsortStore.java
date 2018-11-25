@@ -126,38 +126,22 @@ public class qsortStore {
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
             byte[] _key = Util.longToBytes(keys[i]);
-            if (keys[i] != bkeys[i % BUFFERSIZE]) {
-                if (locks[i % BUFFERSIZE].getAndIncrement() == 0) {
-                    countIo += 1;
-                    long tmpPos = position[i];
-                    tmpPos <<= 12;
-                    int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
-                    if (fileIndex < 0) {
-                        fileIndex += EngineRace.FILENUM;
-                    }
-                    try {
-                        valueFiles[fileIndex].seek(tmpPos);
-                        valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    bkeys[i % BUFFERSIZE] = keys[i];
-                    synchronized (bvalues[i % BUFFERSIZE]) {
-                        bvalues[i % BUFFERSIZE].notifyAll();
-                    }
-                }  else {
-                    synchronized (bvalues[i % BUFFERSIZE]) {
-                        if (keys[i] != bkeys[i % BUFFERSIZE]) {
-                            try {
-                                bvalues[i % BUFFERSIZE].wait();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        bvalues[i % BUFFERSIZE].notifyAll();
-                    }
-                }
-                locks[i % BUFFERSIZE].getAndDecrement();
+            countIo += 1;
+            long tmpPos = position[i];
+            tmpPos <<= 12;
+            int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
+            if (fileIndex < 0) {
+                fileIndex += EngineRace.FILENUM;
+            }
+            try {
+                valueFiles[fileIndex].seek(tmpPos);
+                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            bkeys[i % BUFFERSIZE] = keys[i];
+            synchronized (bvalues[i % BUFFERSIZE]) {
+                bvalues[i % BUFFERSIZE].notifyAll();
             }
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             i += 1;
