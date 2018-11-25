@@ -17,7 +17,7 @@ public class qsortStore {
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 100000;
+    final private static int BUFFERSIZE = 10000;
     //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
@@ -104,18 +104,7 @@ public class qsortStore {
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
             byte[] _key = Util.longToBytes(keys[i]);
-            if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                synchronized (bvalues[i % BUFFERSIZE]) {
-                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                        try {
-                            bvalues[i % BUFFERSIZE].wait();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    bvalues[i % BUFFERSIZE].notifyAll();
-                }
-            }
+            while (bkeys[i % BUFFERSIZE] != keys[i]) Thread.yield();
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             i += 1;
             //System.out.println(Thread.currentThread().getId() + "done" + i);
@@ -123,6 +112,7 @@ public class qsortStore {
 
     }
     public void range(long l, long r, AbstractVisitor visitor) {
+        long start = System.currentTimeMillis();
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
             byte[] _key = Util.longToBytes(keys[i]);
@@ -140,11 +130,11 @@ public class qsortStore {
                 e.printStackTrace();
             }
             bkeys[i % BUFFERSIZE] = keys[i];
-            synchronized (bvalues[i % BUFFERSIZE]) {
-                bvalues[i % BUFFERSIZE].notifyAll();
-            }
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             i += 1;
+            if (System.currentTimeMillis() - start > 1000 * 60 * 20) {
+                System.exit(-1);
+            }
         }
         System.out.println("countIo" + countIo);
     }
