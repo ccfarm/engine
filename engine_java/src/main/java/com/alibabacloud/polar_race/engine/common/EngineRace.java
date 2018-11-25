@@ -321,7 +321,14 @@ public class EngineRace extends AbstractEngine {
         } else {
             r = Util.bytesToLong(upper);
         }
-        qsortStore.range(l, r, visitor);
+        if (lock.getAndIncrement() == 0) {
+            qsortStore.range(l, r, visitor);
+            lock.getAndDecrement();
+        } else {
+            lock.getAndDecrement();
+            qsortStore.rangeWithOutRead(l, r, visitor);
+        }
+
 		System.out.println(Thread.currentThread().getId() + " RangeCost: " + (System.currentTimeMillis() - start));
 	}
 	
