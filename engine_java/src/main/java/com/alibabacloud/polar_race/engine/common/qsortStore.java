@@ -132,7 +132,7 @@ public class qsortStore {
             bkeys[i % BUFFERSIZE] = keys[i];
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             i += 1;
-            if (countIo == 64000000) {
+            if (countIo == 32000000) {
                 System.out.println("rangeExit: " + (start - System.currentTimeMillis()));
                 System.exit(-1);
             }
