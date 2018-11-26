@@ -38,6 +38,7 @@ public class EngineRace extends AbstractEngine {
 	//long countValueFile = 0l;
 	RandomAccessFile[] valueFiles;
 	qsortStore qsortStore;
+	long threadId = -1;
 	long start;
 	@Override
 	public void open(String path) throws EngineException {
@@ -321,11 +322,14 @@ public class EngineRace extends AbstractEngine {
         } else {
             r = Util.bytesToLong(upper);
         }
-        if (lock.getAndIncrement() == 0) {
+        synchronized (this) {
+            if (threadId == -1) {
+                threadId = Thread.currentThread().getId();
+            }
+        }
+        if (threadId == Thread.currentThread().getId()) {
             qsortStore.range(l, r, visitor);
-            lock.getAndDecrement();
         } else {
-            lock.getAndDecrement();
             qsortStore.rangeWithOutRead(l, r, visitor);
         }
 

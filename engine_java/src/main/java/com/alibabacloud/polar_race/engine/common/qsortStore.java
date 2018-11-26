@@ -17,7 +17,7 @@ public class qsortStore {
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 10000;
+    final private static int BUFFERSIZE = 100000;
     //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
@@ -145,10 +145,10 @@ public class qsortStore {
             }
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             i += 1;
-            if (countIo == 32000000) {
-                System.out.println("rangeExit: " + (start - System.currentTimeMillis()));
-                System.exit(-1);
-            }
+//            if (countIo == 32000000) {
+//                System.out.println("rangeExit: " + (start - System.currentTimeMillis()));
+//                System.exit(-1);
+//            }
         }
         System.out.println("countIo" + countIo);
     }
