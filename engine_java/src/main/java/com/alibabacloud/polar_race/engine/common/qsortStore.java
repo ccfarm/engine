@@ -124,7 +124,12 @@ public class qsortStore {
     public void range(long l, long r, AbstractVisitor visitor) {
         long start = System.currentTimeMillis();
         int i = find(l);
+        long timeBeging;
+        long timeCost1 = 0;
+        long timeCost2 = 0;
+        long timeCost3 = 0;
         while (i < size && Util.compare(keys[i], r) < 0) {
+            timeBeging = System.currentTimeMillis();
             byte[] _key = Util.longToBytes(keys[i]);
             countIo += 1;
             long tmpPos = position[i];
@@ -133,25 +138,30 @@ public class qsortStore {
             if (fileIndex < 0) {
                 fileIndex += EngineRace.FILENUM;
             }
-            byte[] tmp = new byte[4096];
+            timeCost1 += (timeBeging - System.currentTimeMillis());
+            timeBeging = System.currentTimeMillis();
             try {
                 valueFiles[fileIndex].seek(tmpPos);
-//                valueFiles[fileIndex].read(tmp);
-//                bvalues[i % BUFFERSIZE] = tmp;
                 valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            timeCost2 += (timeBeging - System.currentTimeMillis());
+            timeBeging = System.currentTimeMillis();
             bkeys[i % BUFFERSIZE] = keys[i];
             synchronized (bvalues[i % BUFFERSIZE]) {
                 bvalues[i % BUFFERSIZE].notifyAll();
             }
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             i += 1;
-            if (countIo == 32000000) {
+            if (countIo == 1000000) {
                 System.out.println("rangeExit: " + (start - System.currentTimeMillis()));
+                System.out.println(timeCost1);
+                System.out.println(timeCost2);
+                System.out.println(timeCost3);
                 System.exit(-1);
             }
+            timeCost3 += (timeBeging - System.currentTimeMillis());
         }
         System.out.println("countIo" + countIo);
     }
