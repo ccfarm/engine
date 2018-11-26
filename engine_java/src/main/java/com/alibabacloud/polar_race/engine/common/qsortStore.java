@@ -154,7 +154,7 @@ public class qsortStore {
             }
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             i += 1;
-            if (countIo == 1000000) {
+            if (countIo == 32000000) {
                 System.out.println("rangeExit: " + (start - System.currentTimeMillis()));
                 System.out.println(timeCost1);
                 System.out.println(timeCost2);
