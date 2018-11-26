@@ -136,9 +136,9 @@ public class qsortStore {
             byte[] tmp = new byte[4096];
             try {
                 valueFiles[fileIndex].seek(tmpPos);
-                valueFiles[fileIndex].read(tmp);
-                bvalues[i % BUFFERSIZE] = tmp;
-                //valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+//                valueFiles[fileIndex].read(tmp);
+//                bvalues[i % BUFFERSIZE] = tmp;
+                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
             } catch (Exception e) {
                 e.printStackTrace();
             }
