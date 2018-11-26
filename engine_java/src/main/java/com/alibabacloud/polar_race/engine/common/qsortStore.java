@@ -133,9 +133,12 @@ public class qsortStore {
             if (fileIndex < 0) {
                 fileIndex += EngineRace.FILENUM;
             }
+            byte[] tmp = new byte[4096];
             try {
                 valueFiles[fileIndex].seek(tmpPos);
-                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+                valueFiles[fileIndex].read(tmp);
+                bvalues[i % BUFFERSIZE] = tmp;
+                //valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -145,10 +148,10 @@ public class qsortStore {
             }
             visitor.visit(_key, bvalues[i % BUFFERSIZE]);
             i += 1;
-//            if (countIo == 32000000) {
-//                System.out.println("rangeExit: " + (start - System.currentTimeMillis()));
-//                System.exit(-1);
-//            }
+            if (countIo == 32000000) {
+                System.out.println("rangeExit: " + (start - System.currentTimeMillis()));
+                System.exit(-1);
+            }
         }
         System.out.println("countIo" + countIo);
     }
