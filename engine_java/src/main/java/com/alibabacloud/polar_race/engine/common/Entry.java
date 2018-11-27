@@ -1,7 +1,7 @@
 package com.alibabacloud.polar_race.engine.common;
 
 public class Entry {
-    public long key;
+    volatile public long key;
     public byte[] _key;
     public byte[] value;
     public Entry() {
