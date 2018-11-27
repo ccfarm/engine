@@ -125,10 +125,12 @@ public class qsortStore {
         long start = System.currentTimeMillis();
         int i = find(l);
         long timeBeging;
+        long timeCost00 = 0;
         long timeCost0 = 0;
         long timeCost1 = 0;
         long timeCost2 = 0;
         long timeCost3 = 0;
+        long timeCost4 = 0;
         while (i < size && Util.compare(keys[i], r) < 0) {
             timeBeging = System.currentTimeMillis();
             countIo += 1;
@@ -138,17 +140,23 @@ public class qsortStore {
             if (fileIndex < 0) {
                 fileIndex += EngineRace.FILENUM;
             }
-            timeCost0 += (timeBeging - System.currentTimeMillis());
-            timeBeging = System.currentTimeMillis();
             try {
+                timeCost00 += (timeBeging - System.currentTimeMillis());
+                timeBeging = System.currentTimeMillis();
                 valueFiles[fileIndex].seek(tmpPos);
+                timeCost0 += (timeBeging - System.currentTimeMillis());
+                timeBeging = System.currentTimeMillis();
+                byte[] tmp = new byte[4096];
                 timeCost1 += (timeBeging - System.currentTimeMillis());
                 timeBeging = System.currentTimeMillis();
-                valueFiles[fileIndex].read(buffer[i % BUFFERSIZE].value);
+                valueFiles[fileIndex].read(tmp);
+                timeCost2 += (timeBeging - System.currentTimeMillis());
+                timeBeging = System.currentTimeMillis();
+                buffer[i % BUFFERSIZE].value = tmp;
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            timeCost2 += (timeBeging - System.currentTimeMillis());
+            timeCost3 += (timeBeging - System.currentTimeMillis());
             timeBeging = System.currentTimeMillis();
             buffer[i % BUFFERSIZE]._key = Util.longToBytes(keys[i]);
             buffer[i % BUFFERSIZE].key = keys[i];
@@ -159,13 +167,15 @@ public class qsortStore {
             i += 1;
             if (countIo == 32000000) {
                 System.out.println("rangeExit: " + (start - System.currentTimeMillis()));
+                System.out.println(timeCost00);
                 System.out.println(timeCost0);
                 System.out.println(timeCost1);
                 System.out.println(timeCost2);
                 System.out.println(timeCost3);
+                System.out.println(timeCost4);
                 System.exit(-1);
             }
-            timeCost3 += (timeBeging - System.currentTimeMillis());
+            timeCost4 += (timeBeging - System.currentTimeMillis());
         }
         System.out.println("countIo" + countIo);
     }

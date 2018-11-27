@@ -5,7 +5,6 @@ public class Entry {
     volatile public byte[] _key;
     volatile public byte[] value;
     public Entry() {
-        this.value = new byte[4096];
     }
     public Entry(long key) {
         this.key = key;
