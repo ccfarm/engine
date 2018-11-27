@@ -17,14 +17,14 @@ public class qsortStore {
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 100000;
+    final private static int BUFFERSIZE = 150000;
     //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
     qsortStore(String path) {
         for (int i = 0; i < BUFFERSIZE; i++) {
-            locks[i] = new AtomicInteger();
+            locks[i] = new AtomicInteger(0);
         }
         size = 0;
         keys = new long[64000000];
@@ -144,7 +144,8 @@ public class qsortStore {
     }
 
     private void read(int i) {
-        while (i < size) {
+        int roof = i + 128;
+        while (i < size && i < roof) {
             if ((locks[i % BUFFERSIZE].incrementAndGet() == 1) && (bkeys[i % BUFFERSIZE] != keys[i])) {
                 countIo += 1;
                 long tmpPos = position[i];
