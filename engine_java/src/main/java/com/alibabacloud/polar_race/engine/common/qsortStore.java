@@ -125,6 +125,7 @@ public class qsortStore {
         long start = System.currentTimeMillis();
         int i = find(l);
         long timeBeging;
+        long timeCost0 = 0;
         long timeCost1 = 0;
         long timeCost2 = 0;
         long timeCost3 = 0;
@@ -138,13 +139,13 @@ public class qsortStore {
             if (fileIndex < 0) {
                 fileIndex += EngineRace.FILENUM;
             }
-
+            timeCost0 += (timeBeging - System.currentTimeMillis());
             timeBeging = System.currentTimeMillis();
             try {
                 valueFiles[fileIndex].seek(tmpPos);
                 timeCost1 += (timeBeging - System.currentTimeMillis());
                 timeBeging = System.currentTimeMillis();
-                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE], 0, 4096);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -158,6 +159,7 @@ public class qsortStore {
             i += 1;
             if (countIo == 32000000) {
                 System.out.println("rangeExit: " + (start - System.currentTimeMillis()));
+                System.out.println(timeCost0);
                 System.out.println(timeCost1);
                 System.out.println(timeCost2);
                 System.out.println(timeCost3);
