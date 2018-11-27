@@ -5,6 +5,8 @@ import com.alibabacloud.polar_race.engine.common.exceptions.RetCodeEnum;
 import com.carrotsearch.hppc.LongIntHashMap;
 
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,6 +23,7 @@ public class qsortStore {
     //final private static int BUFFERSIZE = 500;
     volatile Entry[] buffer = new Entry[BUFFERSIZE];
     RandomAccessFile[] valueFiles;
+    FileChannel[] valueChannles;
     qsortStore(String path) {
         for (int i = 0; i < BUFFERSIZE; i++) {
             locks[i] = new AtomicInteger();
@@ -30,9 +33,12 @@ public class qsortStore {
         keys = new long[64000000];
         position = new int[64000000];
         valueFiles = new RandomAccessFile[(int)EngineRace.FILENUM];
+        valueChannles = new FileChannel[(int)EngineRace.FILENUM];
         for (int i = 0; i < EngineRace.FILENUM; i++) {
             try {
                 valueFiles[i] = new RandomAccessFile(path + "valueFile" + i, "rw");
+                valueChannles[i] = valueFiles[i].getChannel();
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -143,16 +149,18 @@ public class qsortStore {
             try {
                 timeCost00 += (timeBeging - System.currentTimeMillis());
                 timeBeging = System.currentTimeMillis();
-                valueFiles[fileIndex].seek(tmpPos);
+                //valueFiles[fileIndex].seek(tmpPos);
+                valueChannles[fileIndex].position(tmpPos);
                 timeCost0 += (timeBeging - System.currentTimeMillis());
                 timeBeging = System.currentTimeMillis();
-                byte[] tmp = new byte[4096];
+                //byte[] tmp = new byte[4 * 1024];
+                ByteBuffer tmp = ByteBuffer.allocate(4 * 1024);
                 timeCost1 += (timeBeging - System.currentTimeMillis());
                 timeBeging = System.currentTimeMillis();
-                valueFiles[fileIndex].read(tmp);
+                valueChannles[fileIndex].read(tmp);
                 timeCost2 += (timeBeging - System.currentTimeMillis());
                 timeBeging = System.currentTimeMillis();
-                buffer[i % BUFFERSIZE].value = tmp;
+                buffer[i % BUFFERSIZE].value = tmp.array();
             } catch (Exception e) {
                 e.printStackTrace();
             }

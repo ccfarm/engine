@@ -341,7 +341,6 @@ public class EngineRace extends AbstractEngine {
 			}
             qsortStore.rangeWithOutRead(l, r, visitor);
         }
-
 		System.out.println(Thread.currentThread().getId() + " RangeCost: " + (System.currentTimeMillis() - start));
 	}
 	
