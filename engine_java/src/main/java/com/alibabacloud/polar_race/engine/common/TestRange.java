@@ -9,7 +9,7 @@ public class TestRange {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        for (int i =0; i < 3; i++) {
+        for (int i =0; i < 2; i++) {
             ThreadRange t1 = new ThreadRange((byte)i);
             t1.start();
         }

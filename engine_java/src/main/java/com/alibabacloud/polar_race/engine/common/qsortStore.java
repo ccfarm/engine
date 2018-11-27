@@ -47,6 +47,11 @@ public class qsortStore {
         long start = System.currentTimeMillis();
         qsort(0, size-1);
         System.out.println("sortCost: " + (System.currentTimeMillis() - start));
+        int count = 0;
+        while (count < 100) {
+            Util.printBytes(Util.longToBytes(keys[count]));
+            count += 1;
+        }
     }
     private void qsort(int l, int r) {
         int i = l;
@@ -102,6 +107,7 @@ public class qsortStore {
     }
     public void rangeWithOutRead(long l, long r, AbstractVisitor visitor) {
         int i = find(l);
+        int count = 0;
         while (i < size && Util.compare(keys[i], r) < 0) {
             if (buffer[i % BUFFERSIZE].key != keys[i]) {
                 synchronized (buffer[i % BUFFERSIZE]) {
@@ -115,6 +121,7 @@ public class qsortStore {
                     buffer[i % BUFFERSIZE].notifyAll();
                 }
             }
+
             visitor.visit(buffer[i % BUFFERSIZE]._key, buffer[i % BUFFERSIZE].value);
             i += 1;
         }
@@ -123,6 +130,7 @@ public class qsortStore {
     public void range(long l, long r, AbstractVisitor visitor) {
         long start = System.currentTimeMillis();
         int i = find(l);
+        int count = 0;
         long timeBeging;
         long timeCost0 = 0;
         long timeCost1 = 0;
@@ -155,6 +163,11 @@ public class qsortStore {
                 buffer[i % BUFFERSIZE].notifyAll();
             }
             visitor.visit(buffer[i % BUFFERSIZE]._key, buffer[i % BUFFERSIZE].value);
+            if (count < 1000) {
+                count += 1;
+                Util.printBytes(buffer[i % BUFFERSIZE]._key);
+                //Util.printBytes(buffer[i % BUFFERSIZE].value);
+            }
             i += 1;
             if (countIo == 32000000) {
                 System.out.println("rangeExit: " + (start - System.currentTimeMillis()));
