@@ -19,7 +19,7 @@ public class qsortStore {
     public int[] position;
     final private static int BUFFERSIZE = 10000;
     //final private static int BUFFERSIZE = 500;
-    Entry[] buffer = new Entry[BUFFERSIZE];
+    volatile Entry[] buffer = new Entry[BUFFERSIZE];
     RandomAccessFile[] valueFiles;
     qsortStore(String path) {
         for (int i = 0; i < BUFFERSIZE; i++) {
@@ -115,7 +115,7 @@ public class qsortStore {
 //                    buffer[i % BUFFERSIZE].notifyAll();
 //                }
 //            }
-            while (buffer[i % BUFFERSIZE].key != keys[i]) Thread.yield();
+            while (buffer[i % BUFFERSIZE].key != keys[i]);
             visitor.visit(buffer[i % BUFFERSIZE]._key, buffer[i % BUFFERSIZE].value);
             i += 1;
         }
