@@ -19,8 +19,7 @@ public class qsortStore {
     public int[] position;
     final private static int BUFFERSIZE = 100000;
     //final private static int BUFFERSIZE = 500;
-    long[] bkeys = new long[BUFFERSIZE];
-    byte[][] bvalues = new byte[BUFFERSIZE][4096];
+    Entry[] buffer = new Entry[BUFFERSIZE];
     RandomAccessFile[] valueFiles;
     qsortStore(String path) {
         for (int i = 0; i < BUFFERSIZE; i++) {
@@ -103,19 +102,18 @@ public class qsortStore {
     public void rangeWithOutRead(long l, long r, AbstractVisitor visitor) {
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
-            byte[] _key = Util.longToBytes(keys[i]);
-            while (bkeys[i % BUFFERSIZE] != keys[i]) Thread.yield();
-            synchronized (bvalues[i % BUFFERSIZE]) {
-                if (bkeys[i % BUFFERSIZE] != keys[i]) {
+            while (buffer[i % BUFFERSIZE] == null || buffer[i % BUFFERSIZE].key != keys[i]) Thread.yield();
+            synchronized (buffer[i % BUFFERSIZE]) {
+                if (buffer[i % BUFFERSIZE].key != keys[i]) {
                     try {
-                        bvalues[i % BUFFERSIZE].wait();
+                        buffer[i % BUFFERSIZE].wait();
                     }catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
-                bvalues[i % BUFFERSIZE].notifyAll();
+                buffer[i % BUFFERSIZE].notifyAll();
             }
-            visitor.visit(_key, bvalues[i % BUFFERSIZE]);
+            visitor.visit(buffer[i % BUFFERSIZE]._key, buffer[i % BUFFERSIZE].value);
             i += 1;
             //System.out.println(Thread.currentThread().getId() + "done" + i);
         }
@@ -131,7 +129,6 @@ public class qsortStore {
         long timeCost3 = 0;
         while (i < size && Util.compare(keys[i], r) < 0) {
             timeBeging = System.currentTimeMillis();
-            byte[] _key = Util.longToBytes(keys[i]);
             countIo += 1;
             long tmpPos = position[i];
             tmpPos <<= 12;
@@ -145,17 +142,21 @@ public class qsortStore {
                 valueFiles[fileIndex].seek(tmpPos);
                 timeCost1 += (timeBeging - System.currentTimeMillis());
                 timeBeging = System.currentTimeMillis();
-                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE], 0, 4096);
+                if (buffer[i % BUFFERSIZE] == null) {
+                    buffer[i % BUFFERSIZE] = new Entry();
+                }
+                valueFiles[fileIndex].read(buffer[i % BUFFERSIZE].value);
             } catch (Exception e) {
                 e.printStackTrace();
             }
             timeCost2 += (timeBeging - System.currentTimeMillis());
             timeBeging = System.currentTimeMillis();
-            bkeys[i % BUFFERSIZE] = keys[i];
-            synchronized (bvalues[i % BUFFERSIZE]) {
-                bvalues[i % BUFFERSIZE].notifyAll();
+            buffer[i % BUFFERSIZE]._key = Util.longToBytes(keys[i]);
+            buffer[i % BUFFERSIZE].key = keys[i];
+            synchronized (buffer[i % BUFFERSIZE]) {
+                buffer[i % BUFFERSIZE].notifyAll();
             }
-            visitor.visit(_key, bvalues[i % BUFFERSIZE]);
+            visitor.visit(buffer[i % BUFFERSIZE]._key, buffer[i % BUFFERSIZE].value);
             i += 1;
             if (countIo == 32000000) {
                 System.out.println("rangeExit: " + (start - System.currentTimeMillis()));

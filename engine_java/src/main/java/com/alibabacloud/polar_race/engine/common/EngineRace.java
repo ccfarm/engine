@@ -330,7 +330,7 @@ public class EngineRace extends AbstractEngine {
         if (threadId == Thread.currentThread().getId()) {
             qsortStore.range(l, r, visitor);
         } else {
-        	if (qsortStore.size > 1000000) {
+        	if (qsortStore.size > 32000000) {
         		synchronized (this) {
         			try {
 						this.wait();
