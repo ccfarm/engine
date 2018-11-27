@@ -138,10 +138,12 @@ public class qsortStore {
             if (fileIndex < 0) {
                 fileIndex += EngineRace.FILENUM;
             }
-            timeCost1 += (timeBeging - System.currentTimeMillis());
+
             timeBeging = System.currentTimeMillis();
             try {
                 valueFiles[fileIndex].seek(tmpPos);
+                timeCost1 += (timeBeging - System.currentTimeMillis());
+                timeBeging = System.currentTimeMillis();
                 valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
             } catch (Exception e) {
                 e.printStackTrace();
