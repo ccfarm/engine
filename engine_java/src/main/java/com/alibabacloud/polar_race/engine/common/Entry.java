@@ -2,8 +2,8 @@ package com.alibabacloud.polar_race.engine.common;
 
 public class Entry {
     volatile public long key;
-    public byte[] _key;
-    public byte[] value;
+    volatile public byte[] _key;
+    volatile public byte[] value;
     public Entry() {
         this.value = new byte[4096];
     }
