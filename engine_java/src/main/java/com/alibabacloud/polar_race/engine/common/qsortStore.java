@@ -5,8 +5,6 @@ import com.alibabacloud.polar_race.engine.common.exceptions.RetCodeEnum;
 import com.carrotsearch.hppc.LongIntHashMap;
 
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,30 +13,26 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class qsortStore {
     AtomicInteger[] locks = new AtomicInteger[BUFFERSIZE];
-    static int countIo = 0;
+    volatile static int countIo = 0;
     public int size;
     public long[] keys;
     public int[] position;
     final private static int BUFFERSIZE = 100000;
     //final private static int BUFFERSIZE = 500;
-    volatile Entry[] buffer = new Entry[BUFFERSIZE];
+    long[] bkeys = new long[BUFFERSIZE];
+    byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
-    FileChannel[] valueChannles;
     qsortStore(String path) {
         for (int i = 0; i < BUFFERSIZE; i++) {
             locks[i] = new AtomicInteger();
-            buffer[i] = new Entry();
         }
         size = 0;
         keys = new long[64000000];
         position = new int[64000000];
         valueFiles = new RandomAccessFile[(int)EngineRace.FILENUM];
-        valueChannles = new FileChannel[(int)EngineRace.FILENUM];
         for (int i = 0; i < EngineRace.FILENUM; i++) {
             try {
                 valueFiles[i] = new RandomAccessFile(path + "valueFile" + i, "rw");
-                valueChannles[i] = valueFiles[i].getChannel();
-
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -106,39 +100,22 @@ public class qsortStore {
             return j;
         }
     }
-    public void rangeWithOutRead(long l, long r, AbstractVisitor visitor) {
+    public void rangePlus(long l, long r, AbstractVisitor visitor) {
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
-            if (buffer[i % BUFFERSIZE].key != keys[i]) {
-                synchronized (buffer[i % BUFFERSIZE]) {
-                    if (buffer[i % BUFFERSIZE].key != keys[i]) {
-                        try {
-                            buffer[i % BUFFERSIZE].wait();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    buffer[i % BUFFERSIZE].notifyAll();
-                }
+            while (bkeys[i % BUFFERSIZE] != keys[i]) {
+                read(i);
             }
-            //while (buffer[i % BUFFERSIZE].key != keys[i]);
-            visitor.visit(buffer[i % BUFFERSIZE]._key, buffer[i % BUFFERSIZE].value);
+            visitor.visit(Util.longToBytes(keys[i]), bvalues[i % BUFFERSIZE]);
             i += 1;
         }
-
+        System.out.println(Thread.currentThread().getId() + "done" + i);
+        System.out.println(Thread.currentThread().getId() + "countIo" + countIo);
     }
     public void range(long l, long r, AbstractVisitor visitor) {
         long start = System.currentTimeMillis();
         int i = find(l);
-        long timeBeging;
-        long timeCost00 = 0;
-        long timeCost0 = 0;
-        long timeCost1 = 0;
-        long timeCost2 = 0;
-        long timeCost3 = 0;
-        long timeCost4 = 0;
         while (i < size && Util.compare(keys[i], r) < 0) {
-            timeBeging = System.currentTimeMillis();
             countIo += 1;
             long tmpPos = position[i];
             tmpPos <<= 12;
@@ -147,44 +124,50 @@ public class qsortStore {
                 fileIndex += EngineRace.FILENUM;
             }
             try {
-                timeCost00 += (timeBeging - System.currentTimeMillis());
-                timeBeging = System.currentTimeMillis();
-                //valueFiles[fileIndex].seek(tmpPos);
-                valueChannles[fileIndex].position(tmpPos);
-                timeCost0 += (timeBeging - System.currentTimeMillis());
-                timeBeging = System.currentTimeMillis();
-                //byte[] tmp = new byte[4 * 1024];
-                ByteBuffer tmp = ByteBuffer.allocate(4 * 1024);
-                timeCost1 += (timeBeging - System.currentTimeMillis());
-                timeBeging = System.currentTimeMillis();
-                valueChannles[fileIndex].read(tmp);
-                timeCost2 += (timeBeging - System.currentTimeMillis());
-                timeBeging = System.currentTimeMillis();
-                buffer[i % BUFFERSIZE].value = tmp.array();
+                valueFiles[fileIndex].seek(tmpPos);
+                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            timeCost3 += (timeBeging - System.currentTimeMillis());
-            timeBeging = System.currentTimeMillis();
-            buffer[i % BUFFERSIZE]._key = Util.longToBytes(keys[i]);
-            buffer[i % BUFFERSIZE].key = keys[i];
-            synchronized (buffer[i % BUFFERSIZE]) {
-                buffer[i % BUFFERSIZE].notifyAll();
+            bkeys[i % BUFFERSIZE] = keys[i];
+            synchronized (bvalues[i % BUFFERSIZE]) {
+                bvalues[i % BUFFERSIZE].notifyAll();
             }
-            visitor.visit(buffer[i % BUFFERSIZE]._key, buffer[i % BUFFERSIZE].value);
+            visitor.visit(Util.longToBytes(bkeys[i]), bvalues[i % BUFFERSIZE]);
             i += 1;
             if (countIo == 32000000) {
-                System.out.println("rangeExit: " + (start - System.currentTimeMillis()));
-                System.out.println(timeCost00);
-                System.out.println(timeCost0);
-                System.out.println(timeCost1);
-                System.out.println(timeCost2);
-                System.out.println(timeCost3);
-                System.out.println(timeCost4);
+                System.out.println("rangeExit: " + (System.currentTimeMillis() - start));
                 System.exit(-1);
             }
-            timeCost4 += (timeBeging - System.currentTimeMillis());
         }
         System.out.println("countIo" + countIo);
+    }
+
+    private void read(int i) {
+        while (i < size) {
+            if ((locks[i % BUFFERSIZE].incrementAndGet() == 1) && (bkeys[i % BUFFERSIZE] != keys[i])) {
+                countIo += 1;
+                long tmpPos = position[i];
+                tmpPos <<= 12;
+                int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
+                if (fileIndex < 0) {
+                    fileIndex += EngineRace.FILENUM;
+                }
+                try {
+                    synchronized (valueFiles[fileIndex]) {
+                        valueFiles[fileIndex].seek(tmpPos);
+                        valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                bkeys[i % BUFFERSIZE] = keys[i];
+                locks[i % BUFFERSIZE].decrementAndGet();
+                return;
+            } else {
+                locks[i % BUFFERSIZE].decrementAndGet();
+                i += 1;
+            }
+        }
     }
 }
