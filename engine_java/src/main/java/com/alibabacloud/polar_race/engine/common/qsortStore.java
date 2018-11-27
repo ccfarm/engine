@@ -24,6 +24,7 @@ public class qsortStore {
     qsortStore(String path) {
         for (int i = 0; i < BUFFERSIZE; i++) {
             locks[i] = new AtomicInteger();
+            buffer[i] = new Entry();
         }
         size = 0;
         keys = new long[64000000];
@@ -102,20 +103,20 @@ public class qsortStore {
     public void rangeWithOutRead(long l, long r, AbstractVisitor visitor) {
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
-            while (buffer[i % BUFFERSIZE] == null || buffer[i % BUFFERSIZE].key != keys[i]) Thread.yield();
-            synchronized (buffer[i % BUFFERSIZE]) {
-                if (buffer[i % BUFFERSIZE].key != keys[i]) {
-                    try {
-                        buffer[i % BUFFERSIZE].wait();
-                    }catch (Exception e) {
-                        e.printStackTrace();
+            if (buffer[i % BUFFERSIZE].key != keys[i]) {
+                synchronized (buffer[i % BUFFERSIZE]) {
+                    if (buffer[i % BUFFERSIZE].key != keys[i]) {
+                        try {
+                            buffer[i % BUFFERSIZE].wait();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
+                    buffer[i % BUFFERSIZE].notifyAll();
                 }
-                buffer[i % BUFFERSIZE].notifyAll();
             }
             visitor.visit(buffer[i % BUFFERSIZE]._key, buffer[i % BUFFERSIZE].value);
             i += 1;
-            //System.out.println(Thread.currentThread().getId() + "done" + i);
         }
 
     }
@@ -142,9 +143,6 @@ public class qsortStore {
                 valueFiles[fileIndex].seek(tmpPos);
                 timeCost1 += (timeBeging - System.currentTimeMillis());
                 timeBeging = System.currentTimeMillis();
-                if (buffer[i % BUFFERSIZE] == null) {
-                    buffer[i % BUFFERSIZE] = new Entry();
-                }
                 valueFiles[fileIndex].read(buffer[i % BUFFERSIZE].value);
             } catch (Exception e) {
                 e.printStackTrace();
