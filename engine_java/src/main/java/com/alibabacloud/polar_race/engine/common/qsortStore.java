@@ -7,6 +7,9 @@ import com.carrotsearch.hppc.LongIntHashMap;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.TreeMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -17,11 +20,12 @@ public class qsortStore {
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 150000;
+    final private static int BUFFERSIZE = 15000;
     //final private static int BUFFERSIZE = 500;
-    volatile long[] bkeys = new long[BUFFERSIZE];
-    volatile byte[][] bvalues = new byte[BUFFERSIZE][4096];
+    long[] bkeys = new long[BUFFERSIZE];
+    byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
+    public ExecutorService pool;
     qsortStore(String path) {
         for (int i = 0; i < BUFFERSIZE; i++) {
             locks[i] = new AtomicInteger(0);
@@ -100,11 +104,20 @@ public class qsortStore {
             return j;
         }
     }
-    public void rangePlus(long l, long r, AbstractVisitor visitor) {
+    public void rangeWithOutRead(long l, long r, AbstractVisitor visitor) {
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
-            while (bkeys[i % BUFFERSIZE] != keys[i]) {
-                read(i);
+            if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                synchronized (bvalues[i % BUFFERSIZE]) {
+                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                        try {
+                            bvalues[i % BUFFERSIZE].wait();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    bvalues[i % BUFFERSIZE].notify();
+                }
             }
             visitor.visit(Util.longToBytes(keys[i]), bvalues[i % BUFFERSIZE]);
             i += 1;
@@ -113,33 +126,41 @@ public class qsortStore {
         System.out.println(Thread.currentThread().getId() + "countIo" + countIo);
     }
     public void range(long l, long r, AbstractVisitor visitor) {
+        pool = Executors.newFixedThreadPool(4);
         long start = System.currentTimeMillis();
         int i = find(l);
+        int j = 0;
         while (i < size && Util.compare(keys[i], r) < 0) {
-            countIo += 1;
-            long tmpPos = position[i];
-            tmpPos <<= 12;
-            int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
-            if (fileIndex < 0) {
-                fileIndex += EngineRace.FILENUM;
+            if (j == 0) {
+                for (int k = 0; k < 64; k ++) {
+                    pool.execute(new readT(i + k));
+                }
+            } else if (i + 63 < size) {
+                //System.out.println((i+63) + "size");
+                pool.execute(new readT(i + 63));
             }
-            try {
-                valueFiles[fileIndex].seek(tmpPos);
-                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                synchronized (bvalues[i % BUFFERSIZE]) {
+                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                        try {
+                            bvalues[i % BUFFERSIZE].wait();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    bvalues[i % BUFFERSIZE].notify();
+                }
             }
-            bkeys[i % BUFFERSIZE] = keys[i];
-            synchronized (bvalues[i % BUFFERSIZE]) {
-                bvalues[i % BUFFERSIZE].notifyAll();
-            }
-            visitor.visit(Util.longToBytes(bkeys[i]), bvalues[i % BUFFERSIZE]);
+            visitor.visit(Util.longToBytes(bkeys[i % BUFFERSIZE]), bvalues[i % BUFFERSIZE]);
+            //System.out.println(i);
             i += 1;
+            j += 1;
             if (countIo == 32000000) {
                 System.out.println("rangeExit: " + (System.currentTimeMillis() - start));
                 System.exit(-1);
             }
         }
+        pool.shutdown();
         System.out.println("countIo" + countIo);
     }
 
@@ -173,4 +194,34 @@ public class qsortStore {
             i += 1;
         }
     }
+
+    class readT extends Thread {
+        private int i;
+        readT(int i) {
+            this.i = i;
+        }
+        @Override
+        public void run(){
+            //System.out.println(i + "run");
+            countIo += 1;
+            long tmpPos = position[i];
+            tmpPos <<= 12;
+            int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
+            if (fileIndex < 0) {
+                fileIndex += EngineRace.FILENUM;
+            }
+            try {
+                valueFiles[fileIndex].seek(tmpPos);
+                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            bkeys[i % BUFFERSIZE] = keys[i];
+            synchronized (bvalues[i % BUFFERSIZE]) {
+                bvalues[i % BUFFERSIZE].notifyAll();
+            }
+        }
+
+    }
+
 }

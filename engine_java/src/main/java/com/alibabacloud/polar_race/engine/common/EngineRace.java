@@ -322,26 +322,25 @@ public class EngineRace extends AbstractEngine {
         } else {
             r = Util.bytesToLong(upper);
         }
-//        synchronized (this) {
-//            if (threadId == -1) {
-//                threadId = Thread.currentThread().getId();
-//            }
-//        }
-//        if (threadId == Thread.currentThread().getId()) {
-//            qsortStore.range(l, r, visitor);
-//        } else {
-//        	if (qsortStore.size > 32000000) {
-//        		synchronized (this) {
-//        			try {
-//						this.wait();
-//					} catch (Exception e) {
-//        				e.printStackTrace();
-//					}
-//				}
-//			}
-//            qsortStore.rangeWithOutRead(l, r, visitor);
-//        }
-        qsortStore.rangePlus(l, r, visitor);
+        synchronized (this) {
+            if (threadId == -1) {
+                threadId = Thread.currentThread().getId();
+            }
+        }
+        if (threadId == Thread.currentThread().getId()) {
+            qsortStore.range(l, r, visitor);
+        } else {
+        	if (qsortStore.size > 32000000) {
+        		synchronized (this) {
+        			try {
+						this.wait();
+					} catch (Exception e) {
+        				e.printStackTrace();
+					}
+				}
+			}
+            qsortStore.rangeWithOutRead(l, r, visitor);
+        }
 		System.out.println(Thread.currentThread().getId() + " RangeCost: " + (System.currentTimeMillis() - start));
 	}
 	
