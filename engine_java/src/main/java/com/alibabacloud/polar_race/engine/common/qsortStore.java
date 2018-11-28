@@ -21,6 +21,7 @@ public class qsortStore {
     public long[] keys;
     public int[] position;
     final private static int BUFFERSIZE = 150000;
+    final private static int PRE = 128;
     //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
@@ -123,12 +124,12 @@ public class qsortStore {
         int j = 0;
         while (i < size && Util.compare(keys[i], r) < 0) {
             if (j == 0) {
-                for (int k = 0; k < 64; k ++) {
+                for (int k = 0; k < PRE; k ++) {
                     pool.execute(new readT(i + k));
                 }
-            } else if (i + 63 < size) {
+            } else if (i + PRE - 1 < size) {
                 //System.out.println((i+63) + "size");
-                pool.execute(new readT(i + 63));
+                pool.execute(new readT(i + PRE - 1));
             }
             while (bkeys[i % BUFFERSIZE] != keys[i]) {
                 Thread.yield();
