@@ -116,7 +116,7 @@ public class qsortStore {
             i += 1;
         }
         System.out.println(Thread.currentThread().getId() + "done" + i);
-        System.out.println(Thread.currentThread().getId() + "countIo" + countIo);
+        //System.out.println(Thread.currentThread().getId() + "countIo" + countIo);
     }
     public void range(long l, long r, AbstractVisitor visitor) {
         long start = System.currentTimeMillis();
@@ -209,6 +209,7 @@ public class qsortStore {
                 e.printStackTrace();
             }
             bkeys[i % BUFFERSIZE] = keys[i];
+            //System.out.println(i);
         }
     }
 
