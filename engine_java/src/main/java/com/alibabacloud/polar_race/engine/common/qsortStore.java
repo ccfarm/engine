@@ -107,17 +107,8 @@ public class qsortStore {
     public void rangeWithOutRead(long l, long r, AbstractVisitor visitor) {
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
-            if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                synchronized (bvalues[i % BUFFERSIZE]) {
-                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                        try {
-                            bvalues[i % BUFFERSIZE].wait();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    bvalues[i % BUFFERSIZE].notify();
-                }
+            while (bkeys[i % BUFFERSIZE] != keys[i]) {
+                Thread.yield();
             }
             visitor.visit(Util.longToBytes(keys[i]), bvalues[i % BUFFERSIZE]);
             i += 1;
@@ -139,17 +130,8 @@ public class qsortStore {
                 //System.out.println((i+63) + "size");
                 pool.execute(new readT(i + 63));
             }
-            if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                synchronized (bvalues[i % BUFFERSIZE]) {
-                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                        try {
-                            bvalues[i % BUFFERSIZE].wait();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    bvalues[i % BUFFERSIZE].notify();
-                }
+            while (bkeys[i % BUFFERSIZE] != keys[i]) {
+                Thread.yield();
             }
             if (j < 10) {
                 Util.printBytes(Util.longToBytes(bkeys[i % BUFFERSIZE]));
