@@ -159,10 +159,10 @@ public class qsortStore {
             //System.out.println(i);
             i += 1;
             j += 1;
-            if (countIo == 32000000) {
-                System.out.println("rangeExit: " + (System.currentTimeMillis() - start));
-                System.exit(-1);
-            }
+//            if (countIo == 32000000) {
+//                System.out.println("rangeExit: " + (System.currentTimeMillis() - start));
+//                System.exit(-1);
+//            }
         }
         pool.shutdown();
         System.out.println("countIo" + countIo);
