@@ -144,31 +144,34 @@ public class qsortStore {
     }
 
     private void read(int i) {
-        int roof = i + 128;
-        while (i < size && i < roof) {
-            if ((locks[i % BUFFERSIZE].incrementAndGet() == 1) && (bkeys[i % BUFFERSIZE] != keys[i])) {
-                countIo += 1;
-                long tmpPos = position[i];
-                tmpPos <<= 12;
-                int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
-                if (fileIndex < 0) {
-                    fileIndex += EngineRace.FILENUM;
-                }
-                try {
-                    synchronized (valueFiles[fileIndex]) {
-                        valueFiles[fileIndex].seek(tmpPos);
-                        valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+        while (i < size) {
+            if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                if (locks[i % BUFFERSIZE].incrementAndGet() == 1) {
+                    countIo += 1;
+                    long tmpPos = position[i];
+                    tmpPos <<= 12;
+                    int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
+                    if (fileIndex < 0) {
+                        fileIndex += EngineRace.FILENUM;
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    try {
+                        synchronized (valueFiles[fileIndex]) {
+                            valueFiles[fileIndex].seek(tmpPos);
+                            valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    bkeys[i % BUFFERSIZE] = keys[i];
+                    locks[i % BUFFERSIZE].decrementAndGet();
+                    return;
+                } else {
+                    locks[i % BUFFERSIZE].decrementAndGet();
                 }
-                bkeys[i % BUFFERSIZE] = keys[i];
-                locks[i % BUFFERSIZE].decrementAndGet();
-                return;
             } else {
-                locks[i % BUFFERSIZE].decrementAndGet();
-                i += 1;
+                return;
             }
+            i += 1;
         }
     }
 }
