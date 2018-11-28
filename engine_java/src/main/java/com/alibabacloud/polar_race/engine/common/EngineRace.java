@@ -216,6 +216,10 @@ public class EngineRace extends AbstractEngine {
 		if (!readyForWrite) {
 			readyForWrite();
 		}
+		if (key[0] == (byte)48 && key[1] == (byte)48 && key[2] == (byte)49 && key[3] == (byte)32) {
+			Util.printBytes(key);
+			Util.printBytes(value);
+		}
 		try {
 		    long tmpKey = 0;
 			for (int i = 0; i < 8; i++) {
