@@ -14,6 +14,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class EngineRace extends AbstractEngine {
@@ -328,13 +329,22 @@ public class EngineRace extends AbstractEngine {
         }
         synchronized (this) {
             if (threadId == -1) {
+                qsortStore.pool = Executors.newFixedThreadPool(8);
                 threadId = Thread.currentThread().getId();
             }
         }
         if (threadId == Thread.currentThread().getId()) {
+
             qsortStore.readAll();
         }
+        if (qsortStore.size > 32000000) {
+            (new ThreadEx()).start();
+        }
         qsortStore.rangeWithOutRead(l, r, visitor);
+
+//        if (threadId == Thread.currentThread().getId()) {
+//            qsortStore.pool.shutdown();
+//        }
 		System.out.println(Thread.currentThread().getId() + " RangeCost: " + (System.currentTimeMillis() - start));
 	}
 	
@@ -349,6 +359,7 @@ public class EngineRace extends AbstractEngine {
 //        }
         if (qsortStore != null) {
             qsortStore.pool.shutdown();
+            System.out.println(111);
         }
 		System.out.println("Cost: " + (System.currentTimeMillis() - this.start));
         System.out.println("------");

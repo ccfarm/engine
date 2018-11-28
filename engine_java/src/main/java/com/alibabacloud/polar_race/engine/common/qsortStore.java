@@ -28,7 +28,7 @@ public class qsortStore {
     RandomAccessFile[] valueFiles;
     public ExecutorService pool;
     qsortStore(String path) {
-        pool = Executors.newFixedThreadPool(8);
+        //pool = Executors.newFixedThreadPool(8);
         for (int i = 0; i < BUFFERSIZE; i++) {
             locks[i] = new AtomicInteger(0);
         }
@@ -209,13 +209,16 @@ public class qsortStore {
                 e.printStackTrace();
             }
             bkeys[i % BUFFERSIZE] = keys[i];
-            //System.out.println(i);
+            if (i < 100) {
+                System.out.println(i);
+            }
         }
     }
 
     class ReadAll extends Thread {
         @Override
         public void run() {
+
             for (int i = 0; i < size; i++) {
                 try {
                     pool.execute(new readT(i));
@@ -223,7 +226,6 @@ public class qsortStore {
                     e.printStackTrace();
                     break;
                 }
-
             }
         }
     }
