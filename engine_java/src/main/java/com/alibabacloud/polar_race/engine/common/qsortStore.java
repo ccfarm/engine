@@ -19,8 +19,8 @@ public class qsortStore {
     public int[] position;
     final private static int BUFFERSIZE = 150000;
     //final private static int BUFFERSIZE = 500;
-    long[] bkeys = new long[BUFFERSIZE];
-    byte[][] bvalues = new byte[BUFFERSIZE][4096];
+    volatile long[] bkeys = new long[BUFFERSIZE];
+    volatile byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
     qsortStore(String path) {
         for (int i = 0; i < BUFFERSIZE; i++) {
@@ -144,7 +144,8 @@ public class qsortStore {
     }
 
     private void read(int i) {
-        while (i < size) {
+        int roof = i + 128;
+        while (i < size && i < roof) {
             if (bkeys[i % BUFFERSIZE] != keys[i]) {
                 if (locks[i % BUFFERSIZE].incrementAndGet() == 1) {
                     countIo += 1;
@@ -168,8 +169,6 @@ public class qsortStore {
                 } else {
                     locks[i % BUFFERSIZE].decrementAndGet();
                 }
-            } else {
-                return;
             }
             i += 1;
         }
