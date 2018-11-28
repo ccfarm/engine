@@ -215,8 +215,10 @@ public class qsortStore {
                 fileIndex += EngineRace.FILENUM;
             }
             try {
-                valueFiles[fileIndex].seek(tmpPos);
-                valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+                synchronized (valueFiles[fileIndex]) {
+                    valueFiles[fileIndex].seek(tmpPos);
+                    valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
