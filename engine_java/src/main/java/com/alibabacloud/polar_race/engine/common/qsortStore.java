@@ -118,7 +118,7 @@ public class qsortStore {
         //System.out.println(Thread.currentThread().getId() + "countIo" + countIo);
     }
     public void range(long l, long r, AbstractVisitor visitor) {
-        pool = Executors.newFixedThreadPool(4);
+        pool = Executors.newFixedThreadPool(8);
         long start = System.currentTimeMillis();
         int i = find(l);
         int j = 0;
@@ -206,9 +206,6 @@ public class qsortStore {
                 e.printStackTrace();
             }
             bkeys[i % BUFFERSIZE] = keys[i];
-            synchronized (bvalues[i % BUFFERSIZE]) {
-                bvalues[i % BUFFERSIZE].notifyAll();
-            }
         }
 
     }
