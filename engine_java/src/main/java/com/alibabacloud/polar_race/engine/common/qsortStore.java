@@ -20,7 +20,7 @@ public class qsortStore {
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 15000;
+    final private static int BUFFERSIZE = 150000;
     //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
@@ -122,8 +122,8 @@ public class qsortStore {
             visitor.visit(Util.longToBytes(keys[i]), bvalues[i % BUFFERSIZE]);
             i += 1;
         }
-        System.out.println(Thread.currentThread().getId() + "done" + i);
-        System.out.println(Thread.currentThread().getId() + "countIo" + countIo);
+        //System.out.println(Thread.currentThread().getId() + "done" + i);
+        //System.out.println(Thread.currentThread().getId() + "countIo" + countIo);
     }
     public void range(long l, long r, AbstractVisitor visitor) {
         pool = Executors.newFixedThreadPool(4);
@@ -150,6 +150,10 @@ public class qsortStore {
                     }
                     bvalues[i % BUFFERSIZE].notify();
                 }
+            }
+            if (j < 10) {
+                Util.printBytes(Util.longToBytes(bkeys[i % BUFFERSIZE]));
+                Util.printBytes(bvalues[i % BUFFERSIZE]);
             }
             visitor.visit(Util.longToBytes(bkeys[i % BUFFERSIZE]), bvalues[i % BUFFERSIZE]);
             //System.out.println(i);
