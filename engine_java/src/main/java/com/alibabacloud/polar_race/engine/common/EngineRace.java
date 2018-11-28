@@ -332,19 +332,9 @@ public class EngineRace extends AbstractEngine {
             }
         }
         if (threadId == Thread.currentThread().getId()) {
-            qsortStore.range(l, r, visitor);
-        } else {
-//        	if (qsortStore.size > 32000000) {
-//        		synchronized (this) {
-//        			try {
-//						this.wait();
-//					} catch (Exception e) {
-//        				e.printStackTrace();
-//					}
-//				}
-//			}
-            qsortStore.rangeWithOutRead(l, r, visitor);
+            qsortStore.readAll();
         }
+        qsortStore.rangeWithOutRead(l, r, visitor);
 		System.out.println(Thread.currentThread().getId() + " RangeCost: " + (System.currentTimeMillis() - start));
 	}
 	
@@ -357,6 +347,9 @@ public class EngineRace extends AbstractEngine {
 //        } catch (Exception e) {
 //
 //        }
+        if (qsortStore != null) {
+            qsortStore.pool.shutdown();
+        }
 		System.out.println("Cost: " + (System.currentTimeMillis() - this.start));
         System.out.println("------");
 		System.out.println("close");

@@ -28,6 +28,7 @@ public class qsortStore {
     RandomAccessFile[] valueFiles;
     public ExecutorService pool;
     qsortStore(String path) {
+        pool = Executors.newFixedThreadPool(8);
         for (int i = 0; i < BUFFERSIZE; i++) {
             locks[i] = new AtomicInteger(0);
         }
@@ -114,11 +115,10 @@ public class qsortStore {
             visitor.visit(Util.longToBytes(keys[i]), bvalues[i % BUFFERSIZE]);
             i += 1;
         }
-        //System.out.println(Thread.currentThread().getId() + "done" + i);
-        //System.out.println(Thread.currentThread().getId() + "countIo" + countIo);
+        System.out.println(Thread.currentThread().getId() + "done" + i);
+        System.out.println(Thread.currentThread().getId() + "countIo" + countIo);
     }
     public void range(long l, long r, AbstractVisitor visitor) {
-        pool = Executors.newFixedThreadPool(8);
         long start = System.currentTimeMillis();
         int i = find(l);
         int j = 0;
@@ -147,7 +147,6 @@ public class qsortStore {
 //                System.exit(-1);
 //            }
         }
-        pool.shutdown();
         System.out.println("countIo" + countIo);
     }
 
@@ -182,6 +181,10 @@ public class qsortStore {
         }
     }
 
+    public void readAll() {
+        (new ReadAll()).start();
+    }
+
     class readT extends Thread {
         private int i;
         readT(int i) {
@@ -207,7 +210,21 @@ public class qsortStore {
             }
             bkeys[i % BUFFERSIZE] = keys[i];
         }
+    }
 
+    class ReadAll extends Thread {
+        @Override
+        public void run() {
+            for (int i = 0; i < size; i++) {
+                try {
+                    pool.execute(new readT(i));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    break;
+                }
+
+            }
+        }
     }
 
 }
