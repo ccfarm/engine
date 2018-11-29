@@ -29,6 +29,7 @@ public class qsortStore {
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
     RandomAccessFile[] valueFiles;
+    volatile boolean read29;
     //FileChannel[] fileChannels;
 
     public ExecutorService pool;
@@ -127,7 +128,12 @@ public class qsortStore {
     }
 
     public void rangeWithOutReadFirst(long l, long r, AbstractVisitor visitor) {
+
         int i = find(l);
+        read29 = true;
+        for (int j = 0; j < 16; j++) {
+            read29();
+        }
         while (i < size && Util.compare(keys[i], r) < 0) {
             if (i == 0) {
                 for (int k = 0; k < PRE; k ++) {
@@ -136,13 +142,14 @@ public class qsortStore {
             } else if (i + PRE - 1 < size) {
                 //locks[i + PRE - 1]=1;
                 sig.add(i + PRE - 1);
-            };
+            }
             while (bkeys[i % BUFFERSIZE] != keys[i]) {
                 Thread.yield();
             }
             visitor.visit(Util.longToBytes(keys[i]), bvalues[i % BUFFERSIZE]);
             i += 1;
         }
+        read29 = false;
         System.out.println(Thread.currentThread().getId() + "done" + i);
         //System.out.println(Thread.currentThread().getId() + "countIo" + countIo);
     }
@@ -257,7 +264,7 @@ public class qsortStore {
         @Override
         public void run() {
             Integer i;
-            while (true) {
+            while (read29) {
                 if ((i =sig.poll()) == null) {
                     yield();
                 } else {
