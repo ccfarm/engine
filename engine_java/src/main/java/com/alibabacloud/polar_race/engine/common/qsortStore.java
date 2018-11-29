@@ -17,7 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class qsortStore {
     ConcurrentLinkedQueue<Integer> sig = new ConcurrentLinkedQueue<Integer>();
-    byte[] locks = new byte[64000000];
+//    byte[] locks = new byte[64000000];
     volatile static int countIo = 0;
     public int size;
     public long[] keys;

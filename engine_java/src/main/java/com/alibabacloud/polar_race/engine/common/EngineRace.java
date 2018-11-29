@@ -18,7 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class EngineRace extends AbstractEngine {
-	public AtomicInteger lock = new AtomicInteger(0);
+//	public AtomicInteger lock = new AtomicInteger(0);
 	final static long MAPSIZE = 12l * 64 * 1000 * 1000;
 	//final static long FILESIZE =  4 * 1024 * 1024 * 1024;
     final static long FILENUM =  1024;
@@ -329,14 +329,11 @@ public class EngineRace extends AbstractEngine {
         }
         synchronized (this) {
             if (threadId == -1) {
-                qsortStore.pool = Executors.newFixedThreadPool(16);
+                qsortStore.pool = Executors.newFixedThreadPool(24);
                 threadId = Thread.currentThread().getId();
             }
         }
         if (threadId == Thread.currentThread().getId()) {
-            for (int i = 0; i < qsortStore.size; i++) {
-                qsortStore.locks[i] = 0;
-            }
             qsortStore.readAll();
             qsortStore.rangeWithOutReadFirst(l, r, visitor);
         } else {
