@@ -329,7 +329,7 @@ public class EngineRace extends AbstractEngine {
         }
         synchronized (this) {
             if (threadId == -1) {
-                qsortStore.pool = Executors.newFixedThreadPool(12);
+                qsortStore.pool = Executors.newFixedThreadPool(16);
                 threadId = Thread.currentThread().getId();
             }
         }
