@@ -17,19 +17,19 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class qsortStore {
-    ConcurrentLinkedQueue<Integer> sig = new ConcurrentLinkedQueue<Integer>();
+    public ConcurrentLinkedQueue<Integer> sig = new ConcurrentLinkedQueue<Integer>();
 //    byte[] locks = new byte[64000000];
     volatile static int countIo = 0;
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 100000;
+    final private static int BUFFERSIZE = 10000;
     final private static int PRE = BUFFERSIZE / 10;
     //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
-    //RandomAccessFile[] valueFiles;
-    FileChannel[] fileChannels;
+    RandomAccessFile[] valueFiles;
+    //FileChannel[] fileChannels;
 
     public ExecutorService pool;
     qsortStore(String path) {
@@ -40,12 +40,12 @@ public class qsortStore {
         size = 0;
         keys = new long[64000000];
         position = new int[64000000];
-        //valueFiles = new RandomAccessFile[(int)EngineRace.FILENUM];
-        fileChannels = new FileChannel[(int)EngineRace.FILENUM];
+        valueFiles = new RandomAccessFile[(int)EngineRace.FILENUM];
+        //fileChannels = new FileChannel[(int)EngineRace.FILENUM];
         for (int i = 0; i < EngineRace.FILENUM; i++) {
             try {
-                //valueFiles[i] = new RandomAccessFile(path + "valueFile" + i, "rw");
-                fileChannels[i] = new RandomAccessFile(path + "valueFile" + i, "r").getChannel();
+                valueFiles[i] = new RandomAccessFile(path + "valueFile" + i, "rw");
+                //fileChannels[i] = new RandomAccessFile(path + "valueFile" + i, "r").getChannel();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -131,16 +131,12 @@ public class qsortStore {
         while (i < size && Util.compare(keys[i], r) < 0) {
             if (i == 0) {
                 for (int k = 0; k < PRE; k ++) {
-                    //locks[k]=1;
                     sig.add(k);
                 }
             } else if (i + PRE - 1 < size) {
                 //locks[i + PRE - 1]=1;
                 sig.add(i + PRE - 1);
-            } else if (i + PRE - 1 == size) {
-                //System.out.println((i+63) + "size");
-                sig.add( - 1);
-            }
+            };
             while (bkeys[i % BUFFERSIZE] != keys[i]) {
                 Thread.yield();
             }
@@ -241,7 +237,7 @@ public class qsortStore {
 //                    valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
 //                }
                 ByteBuffer buffer = ByteBuffer.allocate(4096);
-                fileChannels[fileIndex].read(buffer, tmpPos);
+                //fileChannels[fileIndex].read(buffer, tmpPos);
                 bvalues[i % BUFFERSIZE] = buffer.array();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -249,6 +245,42 @@ public class qsortStore {
             bkeys[i % BUFFERSIZE] = keys[i];
             if (i < 100) {
                 System.out.println(i);
+            }
+        }
+    }
+
+    void read29() {
+        (new Read29()).start();
+    }
+
+    class Read29 extends Thread {
+        @Override
+        public void run() {
+            Integer i;
+            while (true) {
+                if ((i =sig.poll()) == null) {
+                    yield();
+                } else {
+                    if (i == -1) break;
+                    long tmpPos = position[i];
+                    tmpPos <<= 12;
+                    int fileIndex = (int) (keys[i] % EngineRace.FILENUM);
+                    if (fileIndex < 0) {
+                        fileIndex += EngineRace.FILENUM;
+                    }
+                    try {
+                        synchronized (valueFiles[fileIndex]) {
+                            valueFiles[fileIndex].seek(tmpPos);
+                            valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    bkeys[i % BUFFERSIZE] = keys[i];
+                    if (i < 100) {
+                        System.out.println(i);
+                    }
+                }
             }
         }
     }
