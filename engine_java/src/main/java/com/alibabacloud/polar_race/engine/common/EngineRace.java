@@ -335,7 +335,7 @@ public class EngineRace extends AbstractEngine {
         }
         if (threadId == Thread.currentThread().getId()) {
             for (int i = 0; i < qsortStore.size; i++) {
-                qsortStore.locks[i].set(0);
+                qsortStore.locks[i] = 0;
             }
             qsortStore.readAll();
             qsortStore.rangeWithOutReadFirst(l, r, visitor);
