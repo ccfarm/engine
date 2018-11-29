@@ -5,6 +5,7 @@ import com.alibabacloud.polar_race.engine.common.exceptions.RetCodeEnum;
 import com.carrotsearch.hppc.LongIntHashMap;
 
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -27,7 +28,9 @@ public class qsortStore {
     //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
-    RandomAccessFile[] valueFiles;
+    //RandomAccessFile[] valueFiles;
+    FileChannel[] fileChannels;
+
     public ExecutorService pool;
     qsortStore(String path) {
         //pool = Executors.newFixedThreadPool(8);
@@ -37,10 +40,12 @@ public class qsortStore {
         size = 0;
         keys = new long[64000000];
         position = new int[64000000];
-        valueFiles = new RandomAccessFile[(int)EngineRace.FILENUM];
+        //valueFiles = new RandomAccessFile[(int)EngineRace.FILENUM];
+        fileChannels = new FileChannel[(int)EngineRace.FILENUM];
         for (int i = 0; i < EngineRace.FILENUM; i++) {
             try {
-                valueFiles[i] = new RandomAccessFile(path + "valueFile" + i, "rw");
+                //valueFiles[i] = new RandomAccessFile(path + "valueFile" + i, "rw");
+                fileChannels[i] = new RandomAccessFile(path + "valueFile" + i, "r").getChannel();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -231,10 +236,13 @@ public class qsortStore {
                 fileIndex += EngineRace.FILENUM;
             }
             try {
-                synchronized (valueFiles[fileIndex]) {
-                    valueFiles[fileIndex].seek(tmpPos);
-                    valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
-                }
+//                synchronized (valueFiles[fileIndex]) {
+//                    valueFiles[fileIndex].seek(tmpPos);
+//                    valueFiles[fileIndex].read(bvalues[i % BUFFERSIZE]);
+//                }
+                ByteBuffer buffer = ByteBuffer.allocate(4096);
+                fileChannels[fileIndex].read(buffer, tmpPos);
+                bvalues[i % BUFFERSIZE] = buffer.array();
             } catch (Exception e) {
                 e.printStackTrace();
             }
