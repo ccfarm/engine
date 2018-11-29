@@ -7,6 +7,7 @@ import com.carrotsearch.hppc.LongIntHashMap;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,6 +16,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class qsortStore {
+    ConcurrentLinkedQueue<Integer> sig = new ConcurrentLinkedQueue<Integer>();
     byte[] locks = new byte[64000000];
     volatile static int countIo = 0;
     public int size;
@@ -124,10 +126,15 @@ public class qsortStore {
         while (i < size && Util.compare(keys[i], r) < 0) {
             if (i == 0) {
                 for (int k = 0; k < PRE; k ++) {
-                    locks[k]=1;
+                    //locks[k]=1;
+                    sig.add(k);
                 }
             } else if (i + PRE - 1 < size) {
-                locks[i + PRE - 1]=1;
+                //locks[i + PRE - 1]=1;
+                sig.add(i + PRE - 1);
+            } else if (i + PRE - 1 == size) {
+                //System.out.println((i+63) + "size");
+                sig.add( - 1);
             }
             while (bkeys[i % BUFFERSIZE] != keys[i]) {
                 Thread.yield();
@@ -150,6 +157,9 @@ public class qsortStore {
             } else if (i + PRE - 1 < size) {
                 //System.out.println((i+63) + "size");
                 pool.execute(new readT(i + PRE - 1));
+            } else if (i + PRE - 1 == size) {
+                //System.out.println((i+63) + "size");
+                pool.execute(new readT(-1));
             }
             while (bkeys[i % BUFFERSIZE] != keys[i]) {
                 Thread.yield();
@@ -238,16 +248,29 @@ public class qsortStore {
     class ReadAll extends Thread {
         @Override
         public void run() {
-
-            for (int i = 0; i < size; i++) {
-                while (locks[i] == 0) yield();
-                try {
-                    pool.execute(new readT(i));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    break;
+            Integer i;
+            while (true) {
+                if ((i =sig.poll()) == null) {
+                    yield();
+                } else {
+                    if (i == -1) break;
+                    try {
+                        pool.execute(new readT(i));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        break;
+                    }
                 }
             }
+//            for (int i = 0; i < size; i++) {
+//                while (locks[i] == 0) yield();
+//                try {
+//                    pool.execute(new readT(i));
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    break;
+//                }
+//            }
         }
     }
 
