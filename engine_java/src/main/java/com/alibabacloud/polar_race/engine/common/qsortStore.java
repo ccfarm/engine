@@ -15,12 +15,12 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class qsortStore {
-    AtomicInteger[] locks = new AtomicInteger[BUFFERSIZE];
+    AtomicInteger[] locks = new AtomicInteger[64000000];
     volatile static int countIo = 0;
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 150000;
+    final private static int BUFFERSIZE = 100000;
     final private static int PRE = 1024;
     //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
@@ -29,7 +29,7 @@ public class qsortStore {
     public ExecutorService pool;
     qsortStore(String path) {
         //pool = Executors.newFixedThreadPool(8);
-        for (int i = 0; i < BUFFERSIZE; i++) {
+        for (int i = 0; i < 64000000; i++) {
             locks[i] = new AtomicInteger(0);
         }
         size = 0;
@@ -109,6 +109,26 @@ public class qsortStore {
     public void rangeWithOutRead(long l, long r, AbstractVisitor visitor) {
         int i = find(l);
         while (i < size && Util.compare(keys[i], r) < 0) {
+            while (bkeys[i % BUFFERSIZE] != keys[i]) {
+                Thread.yield();
+            }
+            visitor.visit(Util.longToBytes(keys[i]), bvalues[i % BUFFERSIZE]);
+            i += 1;
+        }
+        System.out.println(Thread.currentThread().getId() + "done" + i);
+        //System.out.println(Thread.currentThread().getId() + "countIo" + countIo);
+    }
+
+    public void rangeWithOutReadFirst(long l, long r, AbstractVisitor visitor) {
+        int i = find(l);
+        while (i < size && Util.compare(keys[i], r) < 0) {
+            if (i == 0) {
+                for (int k = 0; k < PRE; k ++) {
+                    locks[k].incrementAndGet();
+                }
+            } else if (i + PRE - 1 < size) {
+                locks[i + PRE - 1].incrementAndGet();
+            }
             while (bkeys[i % BUFFERSIZE] != keys[i]) {
                 Thread.yield();
             }
@@ -220,6 +240,7 @@ public class qsortStore {
         public void run() {
 
             for (int i = 0; i < size; i++) {
+                while (locks[i].get() == 0) yield();
                 try {
                     pool.execute(new readT(i));
                 } catch (Exception e) {
