@@ -120,17 +120,18 @@ public class qsortStore {
             while (bkeys[i % BUFFERSIZE] != keys[i]) {
                 Thread.yield();
             }
-            if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                synchronized (bvalues[i % BUFFERSIZE]) {
-                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                        try {
-                            bvalues[i % BUFFERSIZE].wait();
-                        } catch (Exception e) {
-                        }
-                    }
-                    bvalues[i % BUFFERSIZE].notifyAll();
-                }
-            }
+            while (bkeys[i % BUFFERSIZE] != keys[i]) Thread.yield();
+//            if (bkeys[i % BUFFERSIZE] != keys[i]) {
+//                synchronized (bvalues[i % BUFFERSIZE]) {
+//                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
+//                        try {
+//                            bvalues[i % BUFFERSIZE].wait();
+//                        } catch (Exception e) {
+//                        }
+//                    }
+//                    bvalues[i % BUFFERSIZE].notifyAll();
+//                }
+//            }
             visitor.visit(Util.longToBytes(keys[i]), bvalues[i % BUFFERSIZE]);
             i += 1;
         }
@@ -153,17 +154,18 @@ public class qsortStore {
                 //locks[i + PRE - 1]=1;
                 sig.add(i + PRE - 1);
             }
-            if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                synchronized (bvalues[i % BUFFERSIZE]) {
-                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
-                        try {
-                            bvalues[i % BUFFERSIZE].wait();
-                        } catch (Exception e) {
-                        }
-                    }
-                    bvalues[i % BUFFERSIZE].notifyAll();
-                }
-            }
+            while (bkeys[i % BUFFERSIZE] != keys[i]) Thread.yield();
+//            if (bkeys[i % BUFFERSIZE] != keys[i]) {
+//                synchronized (bvalues[i % BUFFERSIZE]) {
+//                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
+//                        try {
+//                            bvalues[i % BUFFERSIZE].wait();
+//                        } catch (Exception e) {
+//                        }
+//                    }
+//                    bvalues[i % BUFFERSIZE].notifyAll();
+//                }
+//            }
             visitor.visit(Util.longToBytes(keys[i]), bvalues[i % BUFFERSIZE]);
             i += 1;
         }
@@ -303,9 +305,9 @@ public class qsortStore {
                         e.printStackTrace();
                     }
                     bkeys[i % BUFFERSIZE] = keys[i];
-                    synchronized (bvalues[i % BUFFERSIZE]) {
-                        bvalues[i % BUFFERSIZE].notifyAll();
-                    }
+//                    synchronized (bvalues[i % BUFFERSIZE]) {
+//                        bvalues[i % BUFFERSIZE].notifyAll();
+//                    }
                     if (i < 100) {
                         System.out.println(i);
                     } else if (i == size - 1) {
