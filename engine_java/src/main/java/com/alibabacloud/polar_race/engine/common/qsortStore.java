@@ -287,7 +287,7 @@ public class qsortStore {
             while (read29) {
                 if ((i =sig.poll()) == null) {
                     yield();
-                    System.out.println("i am waiting");
+                    System.out.println("i am waiting" + System.currentTimeMillis());
                 } else {
                     if (i == -1) break;
                     long tmpPos = position[i];
