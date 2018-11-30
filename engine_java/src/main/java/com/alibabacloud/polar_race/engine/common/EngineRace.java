@@ -38,6 +38,7 @@ public class EngineRace extends AbstractEngine {
 	long countKeyFile = 0l;
 	//long countValueFile = 0l;
 	RandomAccessFile[] valueFiles;
+	ThreadLocal<RandomAccessFile[]> valueLocal;
 	qsortStore qsortStore;
 	long threadId = -1;
 	long start;
@@ -61,16 +62,24 @@ public class EngineRace extends AbstractEngine {
 
 	}
 
+	public void readyForReadForLocal() {
+		RandomAccessFile[] valueFiles = new RandomAccessFile[(int)FILENUM];
+		for (int i = 0; i < FILENUM; i++) {
+			try {
+				valueFiles[i] = new RandomAccessFile(this.path + "valueFile" + i, "rw");
+			} catch (Exception e) {
+			}
+		}
+		valueLocal.set(valueFiles);
+	}
+
 	synchronized public void readyForRead() {
 		if (!readyForRead) {
             long start = System.currentTimeMillis();
+			valueLocal = new ThreadLocal<RandomAccessFile[]>();
 			try {
 				keyFile = new RandomAccessFile(this.path + "keyFile", "r");
 				//channelKeyFile = keyFile.getChannel();
-				valueFiles = new RandomAccessFile[(int)FILENUM];
-				for (int i = 0; i < FILENUM; i++) {
-				    valueFiles[i] = new RandomAccessFile(this.path + "valueFile" + i, "rw");
-                }
 				//valueFile = new RandomAccessFile(this.path + "valueFile.data", "r");
 				//position = new DiyHashMap(64000000);
 				//position = new DiyHashMap(3);
@@ -272,6 +281,9 @@ public class EngineRace extends AbstractEngine {
 		if (!readyForRead) {
 			readyForRead();
 		}
+		if (valueLocal.get() == null) {
+			readyForReadForLocal();
+		}
 		long tmpKey = 0;
 		for (int i = 0; i < 8; i++) {
 			tmpKey <<= 8;
@@ -298,10 +310,12 @@ public class EngineRace extends AbstractEngine {
 		//System.out.println(valueFileIndex);
         //System.out.println(pos);
 		try {
-			synchronized (valueFiles[fileIndex]) {
-                valueFiles[fileIndex].seek(tmpPos);
-                valueFiles[fileIndex].read(value);
-			}
+//			synchronized (valueFiles[fileIndex]) {
+//                valueFiles[fileIndex].seek(tmpPos);
+//                valueFiles[fileIndex].read(value);
+//			}
+			valueLocal.get()[fileIndex].seek(tmpPos);
+			valueLocal.get()[fileIndex].read(value);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
