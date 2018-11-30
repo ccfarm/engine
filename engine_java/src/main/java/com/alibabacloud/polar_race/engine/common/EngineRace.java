@@ -381,7 +381,7 @@ public class EngineRace extends AbstractEngine {
 		System.out.println("Cost: " + (System.currentTimeMillis() - this.start));
         System.out.println("------");
 		System.out.println("close");
-        System.out.println("------");
+        System.out.println("------")
 	}
 
 }
