@@ -146,7 +146,7 @@ public class qsortStore {
         for (int k = 0; k < PRE; k ++) {
             sig.add(k);
         }
-        for (int j = 0; j < 8; j++) {
+        for (int j = 0; j < 16; j++) {
             read29();
         }
         while (i < size && Util.compare(keys[i], r) < 0) {
