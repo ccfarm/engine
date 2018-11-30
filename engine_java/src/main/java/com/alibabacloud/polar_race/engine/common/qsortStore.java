@@ -131,7 +131,7 @@ public class qsortStore {
 
         int i = find(l);
         read29 = true;
-        for (int j = 0; j < 4; j++) {
+        for (int j = 0; j < 8; j++) {
             read29();
         }
         while (i < size && Util.compare(keys[i], r) < 0) {
