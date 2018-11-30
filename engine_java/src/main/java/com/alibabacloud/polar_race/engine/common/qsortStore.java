@@ -23,8 +23,8 @@ public class qsortStore {
     public int size;
     public long[] keys;
     public int[] position;
-    final private static int BUFFERSIZE = 10000;
-    final private static int PRE = BUFFERSIZE / 10;
+    final private static int BUFFERSIZE = 100000;
+    final private static int PRE = 1000;
     //final private static int BUFFERSIZE = 500;
     long[] bkeys = new long[BUFFERSIZE];
     byte[][] bvalues = new byte[BUFFERSIZE][4096];
@@ -131,7 +131,7 @@ public class qsortStore {
 
         int i = find(l);
         read29 = true;
-        for (int j = 0; j < 16; j++) {
+        for (int j = 0; j < 4; j++) {
             read29();
         }
         while (i < size && Util.compare(keys[i], r) < 0) {
