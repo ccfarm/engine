@@ -120,6 +120,17 @@ public class qsortStore {
             while (bkeys[i % BUFFERSIZE] != keys[i]) {
                 Thread.yield();
             }
+            if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                synchronized (bvalues[i % BUFFERSIZE]) {
+                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                        try {
+                            bvalues[i % BUFFERSIZE].wait();
+                        } catch (Exception e) {
+                        }
+                    }
+                    bvalues[i % BUFFERSIZE].notifyAll();
+                }
+            }
             visitor.visit(Util.longToBytes(keys[i]), bvalues[i % BUFFERSIZE]);
             i += 1;
         }
@@ -131,20 +142,27 @@ public class qsortStore {
 
         int i = find(l);
         read29 = true;
+        for (int k = 0; k < PRE; k ++) {
+            sig.add(k);
+        }
         for (int j = 0; j < 8; j++) {
             read29();
         }
         while (i < size && Util.compare(keys[i], r) < 0) {
-            if (i == 0) {
-                for (int k = 0; k < PRE; k ++) {
-                    sig.add(k);
-                }
-            } else if (i + PRE - 1 < size) {
+            if (i + PRE - 1 < size) {
                 //locks[i + PRE - 1]=1;
                 sig.add(i + PRE - 1);
             }
-            while (bkeys[i % BUFFERSIZE] != keys[i]) {
-                Thread.yield();
+            if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                synchronized (bvalues[i % BUFFERSIZE]) {
+                    if (bkeys[i % BUFFERSIZE] != keys[i]) {
+                        try {
+                            bvalues[i % BUFFERSIZE].wait();
+                        } catch (Exception e) {
+                        }
+                    }
+                    bvalues[i % BUFFERSIZE].notifyAll();
+                }
             }
             visitor.visit(Util.longToBytes(keys[i]), bvalues[i % BUFFERSIZE]);
             i += 1;
@@ -267,6 +285,7 @@ public class qsortStore {
             while (read29) {
                 if ((i =sig.poll()) == null) {
                     yield();
+                    System.out.println("i am waiting");
                 } else {
                     if (i == -1) break;
                     long tmpPos = position[i];
@@ -284,8 +303,14 @@ public class qsortStore {
                         e.printStackTrace();
                     }
                     bkeys[i % BUFFERSIZE] = keys[i];
+                    synchronized (bvalues[i % BUFFERSIZE]) {
+                        bvalues[i % BUFFERSIZE].notifyAll();
+                    }
                     if (i < 100) {
                         System.out.println(i);
+                    } else if (i == size - 1) {
+                        read29 = false;
+                        break;
                     }
                 }
             }
