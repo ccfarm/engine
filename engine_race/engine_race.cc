@@ -93,7 +93,7 @@ void EngineRace::ReadyForRead() {
   if (!readyForRead) {
     map = new Map();
     buf = new char[8];
-    buf4096 = new char[4096];
+    
     keyFile = open((path + "/key").c_str(), O_RDWR | O_CREAT, 0644);
     keyPos = 0;
     char *keyBuf = new char[8];
@@ -118,6 +118,7 @@ RetCode EngineRace::Read(const PolarString& key, std::string* value) {
     ReadyForRead();
   }
   int64_t pos = map->Get(key);
+  buf4096 = new char[4096];
   //std::cout<<"mark"<<pos<<std::endl;
   pthread_mutex_lock(&mu_);
   lseek(valueFile, pos, SEEK_SET);
