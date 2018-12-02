@@ -71,6 +71,24 @@ bool FileExists(const std::string& path) {
   return access(path.c_str(), F_OK) == 0;
 }
 
+void LongToChars(int64_t num, char* chars) {
+    //char* chars = new char[8];
+    int tmp = 56;
+    for (int i = 0; i < 8; i++) {
+        chars[i] = (num >> tmp) & 0xff;
+        tmp -= 8;
+    }
+}
+
+int64_t CharsToLong(char* chars) {
+    int64_t  num = 0;
+    for (int i = 0; i < 8; i++) {
+        num <<= 8;
+        num |= (chars[i] & 0xff);
+    }
+    return num;
+}
+
 static int LockOrUnlock(int fd, bool lock) {
   errno = 0;
   struct flock f;

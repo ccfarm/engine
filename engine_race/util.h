@@ -17,6 +17,9 @@ int GetFileLength(const std::string& file);
 int FileAppend(int fd, const std::string& value);
 bool FileExists(const std::string& path);
 
+void LongToChars(int64_t num, char* chars);
+int64_t CharsToLong(char* chars);
+
 // FileLock
 class FileLock  {
  public:

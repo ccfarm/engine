@@ -3,10 +3,10 @@
 #define ENGINE_RACE_ENGINE_RACE_H_
 #include <pthread.h>
 #include <string>
+#include <hash_map>
 #include "include/engine.h"
 #include "util.h"
-#include "door_plate.h"
-#include "data_store.h"
+#include "diy_map.h"
 
 namespace polar_race {
 
@@ -16,7 +16,8 @@ class EngineRace : public Engine  {
 
   explicit EngineRace(const std::string& dir) 
   : mu_(PTHREAD_MUTEX_INITIALIZER),
-    db_lock_(NULL), plate_(dir), store_(dir) {
+    db_lock_(NULL), path(dir), readyForWrite(false),
+    readyForRead(false), readyForRange(false) {
     }
 
   ~EngineRace();
@@ -35,11 +36,24 @@ class EngineRace : public Engine  {
       const PolarString& upper,
       Visitor &visitor) override;
 
+  void ReadyForWrite();
+  void ReadyForRead();
+  void ReadyForRange();
+
  private: 
   pthread_mutex_t mu_;
   FileLock* db_lock_;
-  DoorPlate plate_;
-  DataStore store_;
+  int keyFile;
+  int valueFile;
+  int64_t keyPos;
+  int64_t valuePos;
+  std::string path;
+  bool readyForWrite;
+  bool readyForRead;
+  bool readyForRange;
+  char* buf;
+  char* buf4096;
+  Map* map;
 };
 
 }  // namespace polar_race
