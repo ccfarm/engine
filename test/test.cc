@@ -51,6 +51,13 @@ void* readThread(Engine* engine) {
   for (int i = 0; i < 10000; i++) {
     char* _key = new char[8];
     PolarString* key = new PolarString(_key, 8);
+    int tmp = i;
+    int j = 0;
+    while (tmp > 0) {
+      _key[j] = tmp % 10;
+      tmp /= 10;
+      j += 1;
+    }
     std::string value;
     engine->Read(*key, &value);
     // for (int j = 0; j <8; j++) {
@@ -59,10 +66,11 @@ void* readThread(Engine* engine) {
     // for (int j = 0; j < 8; j++) {
     //   std::cout<<(int)_key[j]<<' ';
     // }
-    // std::cout<<std::endl;
+    // std::cout<<"test"<<std::endl;
     // for (int j = 0; j < 8; j++) {
     //   std::cout<<(int)value[j]<<' ';
     // }
+    // std::cout<<"test2"<<std::endl;
   }
 }
 

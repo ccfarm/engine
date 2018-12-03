@@ -1,7 +1,7 @@
 #include "util.h"
 #include "include/engine.h"
 //#define MAPSIZE 64000000
-#define MAPSIZE 640
+#define MAPSIZE 64000
 
 namespace polar_race {
     class Entry{

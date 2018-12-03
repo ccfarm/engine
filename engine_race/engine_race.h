@@ -54,6 +54,7 @@ class EngineRace : public Engine  {
   char* buf;
   char* buf4096;
   Map* map;
+  int count;
 };
 
 }  // namespace polar_race

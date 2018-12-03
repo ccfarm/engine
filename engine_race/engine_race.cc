@@ -43,6 +43,7 @@ EngineRace::~EngineRace() {
 void EngineRace::ReadyForWrite() {
   pthread_mutex_lock(&mu_);
   if (!readyForWrite) {
+    count = 0;
     keyPos = GetFileLength(path + "/key");
     if (keyPos < 0) {
       keyPos = 0;
@@ -77,20 +78,24 @@ RetCode EngineRace::Write(const PolarString& key, const PolarString& value) {
   write(keyFile, buf, 8);
   valuePos += 4096;
   pthread_mutex_unlock(&mu_);
-  // for (int i = 0; i < 8; i++) {
-  //   std::cout<<(int)key[0]<<' ';
-  // }
-  // std::cout<<std::endl;
-  // for (int i = 0; i < 8; i++) {
-  //   std::cout<<(int)value[0]<<' ';
-  // }
-  // std::cout<<std::endl;
+  if (count < 20) {
+    count += 1;
+    for (int i = 0; i < 8; i++) {
+      std::cout<<(int)key[i]<<' ';
+    }
+    std::cout<<std::endl;
+    for (int i = 0; i < 4096; i++) {
+      std::cout<<(int)value[i]<<' ';
+    }
+    std::cout<<"write"<<std::endl;
+  }
   return kSucc;
 }
 
 void EngineRace::ReadyForRead() {
   pthread_mutex_lock(&mu_);
   if (!readyForRead) {
+    count = 0;
     map = new Map();
     buf = new char[8];
     
@@ -107,6 +112,7 @@ void EngineRace::ReadyForRead() {
       //std::cout<<"mark"<<CharsToLong(buf)<<std::endl;
     }
     valueFile = open((path + "/value").c_str(), O_RDWR | O_CREAT, 0644);
+    buf4096 = new char[4096];
     readyForRead = true;
   }
   pthread_mutex_unlock(&mu_);
@@ -118,7 +124,7 @@ RetCode EngineRace::Read(const PolarString& key, std::string* value) {
     ReadyForRead();
   }
   int64_t pos = map->Get(key);
-  buf4096 = new char[4096];
+  
   //std::cout<<"mark"<<pos<<std::endl;
   pthread_mutex_lock(&mu_);
   lseek(valueFile, pos, SEEK_SET);
@@ -127,18 +133,17 @@ RetCode EngineRace::Read(const PolarString& key, std::string* value) {
   //   std::cout<<buf4096[i]<<' ';
   // }
   *value = std::string(buf4096, 4096);
-  // for (int i = 0; i < 8; i++) {
-  //   std::cout<<(int)(*value)[i]<<"valueend";
-  // }
-
-  // for (int i = 0; i < 8; i++) {
-  //   std::cout<<(int)key[0]<<' ';
-  // }
-  // std::cout<<std::endl;
-  // for (int i = 0; i < 8; i++) {
-  //   std::cout<<(int)(*value)[0]<<' ';
-  // }
-  //std::cout<<std::endl;
+  if (count < 20) {
+    count += 1;
+    for (int i = 0; i < 8; i++) {
+      std::cout<<(int)key[i]<<' ';
+    }
+    std::cout<<std::endl;
+    for (int i = 0; i < 4096; i++) {
+      std::cout<<(int)(*value)[i]<<' ';
+    }
+    std::cout<<"read"<<std::endl;
+  }
   pthread_mutex_unlock(&mu_);
   return kSucc;
 }
