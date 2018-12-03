@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <pthread.h>
+#include <thread>
 #include "include/engine.h"
 
 static const char kEnginePath[] = "/home/chao/engine/data";
@@ -27,7 +28,7 @@ private:
 };
 
 void* writeThread(Engine* engine) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 10000; i < 20001; i++) {
     char* _key = new char[8];
     char* _value = new char[4096];
     int tmp = i;
@@ -48,9 +49,8 @@ void* writeThread(Engine* engine) {
 }
 
 void* readThread(Engine* engine) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = i = 9999; i < 20001; i++) {
     char* _key = new char[8];
-    PolarString* key = new PolarString(_key, 8);
     int tmp = i;
     int j = 0;
     while (tmp > 0) {
@@ -58,6 +58,7 @@ void* readThread(Engine* engine) {
       tmp /= 10;
       j += 1;
     }
+    PolarString* key = new PolarString(_key, 8);
     std::string value;
     engine->Read(*key, &value);
     // for (int j = 0; j <8; j++) {
@@ -81,8 +82,22 @@ int main() {
   RetCode ret = Engine::Open(kEnginePath, &engine);
   assert (ret == kSucc);
 
-  writeThread(engine);
-  readThread(engine);
+  std::thread wt1(writeThread, engine);
+  std::thread wt2(writeThread, engine);
+  std::thread wt3(writeThread, engine);
+  std::thread wt4(writeThread, engine);
+  wt1.join();
+  wt2.join();
+  wt3.join();
+  wt4.join();
+  std::thread rt1(readThread, engine);
+  std::thread rt2(readThread, engine);
+  std::thread rt3(readThread, engine);
+  std::thread rt4(readThread, engine);
+  rt1.join();
+  rt2.join();
+  rt3.join();
+  rt4.join();
 
   // char* ch = new char[4096];
   // ch[0] = 49;

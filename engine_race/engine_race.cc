@@ -78,13 +78,13 @@ RetCode EngineRace::Write(const PolarString& key, const PolarString& value) {
   write(keyFile, buf, 8);
   valuePos += 4096;
   pthread_mutex_unlock(&mu_);
-  if (count < 20) {
+  if (count < 100) {
     count += 1;
     for (int i = 0; i < 8; i++) {
       std::cout<<(int)key[i]<<' ';
     }
     std::cout<<std::endl;
-    for (int i = 0; i < 4096; i++) {
+    for (int i = 0; i < 8; i++) {
       std::cout<<(int)value[i]<<' ';
     }
     std::cout<<"write"<<std::endl;
@@ -123,23 +123,35 @@ RetCode EngineRace::Read(const PolarString& key, std::string* value) {
   if (!readyForRead) {
     ReadyForRead();
   }
+  pthread_mutex_lock(&mu_);
   int64_t pos = map->Get(key);
+  if (pos == -1) {
+    if (count < 10000) {
+      count += 1;
+      for (int i = 0; i < 8; i++) {
+        std::cout<<(int)key[i]<<' ';
+      }
+      std::cout<<count<<" "<<pos<<" "<<"notFound"<<std::endl;
+    }
+    pthread_mutex_unlock(&mu_);
+    return kNotFound;
+  }
   
   //std::cout<<"mark"<<pos<<std::endl;
-  pthread_mutex_lock(&mu_);
+  
   lseek(valueFile, pos, SEEK_SET);
   read(valueFile, buf4096, 4096);
   // for (int i = 0; i < 8; i++) {
   //   std::cout<<buf4096[i]<<' ';
   // }
   *value = std::string(buf4096, 4096);
-  if (count < 20) {
+  if (count < 100) {
     count += 1;
     for (int i = 0; i < 8; i++) {
       std::cout<<(int)key[i]<<' ';
     }
     std::cout<<std::endl;
-    for (int i = 0; i < 4096; i++) {
+    for (int i = 0; i < 8; i++) {
       std::cout<<(int)(*value)[i]<<' ';
     }
     std::cout<<"read"<<std::endl;
