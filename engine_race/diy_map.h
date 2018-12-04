@@ -69,7 +69,7 @@ class Entry{
                 }
                 else
                 {
-                    *next = (*next)->next;
+                    next = &((*next)->next);
                 }
             }
             Entry* entry = new Entry(*key, value);
@@ -78,27 +78,32 @@ class Entry{
         int64_t Get(const PolarString& key) {
             //std::cout<<"hello";
             uint32_t hash = StrHash(key.ToString().c_str(), 8) % MAPSIZE;
-            Entry *next = *(values + hash);
+            Entry **next = (values + hash);
+//             for (int i = 0; i < 8; i++) {
+//                 std::cout<<(int)key[i]<<' ';
+//             }
+//             std::cout<<key.size()<<std::endl;
             //std::cout<<&next<<std::endl;
             //std::cout<<(int64_t)next<<std::endl;
             //next = 0x7fff3be80148;
             //std::cout<<"hello";
-            while (next) {
+            while (*next) {
+                //std::cout<<key.ToString()<<std::endl;
                 // std::cout<<"get"<<next->GetKey().ToString()<<"=?"<<key.ToString()<<"value"<<next->GetValue()<<std::endl;
                 // for (int i = 0; i < 8; i++) {
                 //     std::cout<<(int)next->GetKey()[i]<<' ';
                 // }
                 // std::cout<<next->GetKey().size()<<std::endl;
-                // for (int i = 0; i < 8; i++) {
-                //     std::cout<<(int)key[i]<<' ';
-                // }
-                // std::cout<<key.size()<<"get"<<std::endl;
-                if (next->GetKey() == key) {
-                    return next->GetValue();
+//                 for (int i = 0; i < 8; i++) {
+//                     std::cout<<(int)key[i]<<' ';
+//                 }
+//                 std::cout<<key.size()<<"get"<<std::endl;
+                if ((*next)->GetKey() == key) {
+                    return (*next)->GetValue();
                 }
                 else
                 {
-                    next = next->next;
+                    next = &((*next)->next);
                 }
             }
             return -1;
