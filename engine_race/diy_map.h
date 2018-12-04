@@ -1,6 +1,8 @@
 #include "util.h"
 #include <iostream>
 #include "include/engine.h"
+#include <fcntl.h>
+#include <unistd.h>
 //#define MAPSIZE 64000000
 #define MAPSIZE 64000
 
@@ -107,6 +109,44 @@ class Entry{
                 }
             }
             return -1;
+        }
+
+        void Write(std::string path) {
+            int keyFile = open((path + "/_key").c_str(), O_RDWR | O_CREAT, 0644);
+            Entry **next;
+            int block = 64 * 1024;
+            char* buf = (char *) malloc(block);
+            memset(buf, 0, sizeof(char) * block);
+            char* buf8 = (char *) malloc(8);
+            memset(buf8, 0, sizeof(char) * 8);
+            int pos = 0;
+            int count = 0;
+            for (int i = 0; i < MAPSIZE; i++) {
+                Entry **next = (values + i);
+                while (*next) {
+                    //memcmp((*next)->GetKey().data(),(buf+count),  8);
+                    for (int j = 0; j < 8; j++) {
+                        *(buf+count + j) = (*next)->GetKey().data()[j];
+                        //std::cout<<(int)(*next)->GetKey().data()[j]<<' ';
+                    }
+                    //std::cout<<std::endl;
+                    count += 8;
+                    LongToChars((*next)->GetValue(), buf+count);
+                    count += 8;
+                    if (count == block) {
+                        lseek(keyFile, pos, SEEK_SET);
+                        write(keyFile, buf, block);
+                        count = 0;
+                        pos += block;
+
+                    }
+                    next = &((*next)->next);
+                }
+            }
+            if (count > 0) {
+                lseek(keyFile, pos, SEEK_SET);
+                write(keyFile, buf, count);
+            }
         }
 
 

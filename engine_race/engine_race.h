@@ -3,7 +3,6 @@
 #define ENGINE_RACE_ENGINE_RACE_H_
 #include <pthread.h>
 #include <string>
-#include <hash_map>
 #include "include/engine.h"
 #include "util.h"
 #include "diy_map.h"
@@ -55,6 +54,10 @@ class EngineRace : public Engine  {
   char* buf4096;
   Map* map;
   int count;
+  int64_t* keys;
+  int64_t* values;
+  int64_t* bufKeys;
+  char* bufValues;
 };
 
 }  // namespace polar_race

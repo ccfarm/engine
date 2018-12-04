@@ -8,6 +8,7 @@
 #include "engine_race.h"
 #include <iostream>
 #define FILENUM 256
+#define BUFSIZE 256
 
 namespace polar_race {
 
@@ -113,6 +114,7 @@ void EngineRace::ReadyForRead() {
     }
     valueFile = open((path + "/value").c_str(), O_RDWR | O_CREAT, 0644);
     buf4096 = new char[4096];
+    map->Write(path);
     readyForRead = true;
   }
   pthread_mutex_unlock(&mu_);
@@ -171,11 +173,82 @@ RetCode EngineRace::Read(const PolarString& key, std::string* value) {
 // upper=="" is treated as a key after all keys in the database.
 // Therefore the following call will traverse the entire database:
 //   Range("", "", visitor)
-RetCode EngineRace::Range(const PolarString& lower, const PolarString& upper,
-    Visitor &visitor) {
-    pthread_mutex_lock(&mu_);
-    pthread_mutex_unlock(&mu_);
-  return kSucc;
-}
+void EngineRace::ReadyForRange() {
+        pthread_mutex_lock(&mu_);
+        if (!readyForRange) {
+            count = 0;
+            keyFile = open((path + "/_key").c_str(), O_RDWR | O_CREAT, 0644);
+            keys = (int64_t *)malloc(sizeof(int64_t) * MAPSIZE);
+            values = (int64_t *)malloc(sizeof(int64_t) * MAPSIZE);
+            keyPos = 0;
+            buf = new char[8];
+            lseek(keyFile, keyPos, SEEK_SET);
+            while (read(keyFile, buf, 8) > 0) {
+                keys[count] = CharsToLong(buf);
+                //std::cout<<CharsToLong(buf)<<std::endl;
+//                for (int j = 0; j < 8; j++) {
+//                    std::cout<<(int)buf[j]<<' ';
+//                }
+//                std::cout<<"range"<<std::endl;
+                read(keyFile, buf, 8);
+                values[count] = CharsToLong(buf);
+                keyPos += 16;
+                lseek(keyFile, keyPos, SEEK_SET);
+                //std::cout<<keys[count]<<' '<<values[count]<<std::endl;
+                count += 1;
+            }
+            for (int i = 0; i < count; i++)
+                for (int j = i + 1; j < count; j++) {
+                    if ((uint64_t) keys[i] > (uint64_t) keys[j]) {
+                        int64_t t = keys[i];
+                        keys[i] = keys[j];
+                        keys[j] = t;
+                        t = values[i];
+                        values[i] = values[j];
+                        values[j] = t;
+                    }
+                }
+
+            for (int i = 0; i < 10; i++) {
+                LongToChars(keys[i], buf);
+                for (int j = 0; j < 8; j ++) {
+                    std::cout<<(int)buf[j]<<' ';
+                }
+                std::cout<<"readyForRange"<<std::endl;
+            }
+            bufKeys = (int64_t *)malloc(sizeof(int64_t) * BUFSIZE);
+            bufValues = (char *)malloc(sizeof(char) * 4096 * BUFSIZE);
+            valueFile = open((path + "/value").c_str(), O_RDWR | O_CREAT, 0644);
+            readyForRange = true;
+        }
+        pthread_mutex_unlock(&mu_);
+    }
+    RetCode EngineRace::Range(const PolarString& lower, const PolarString& upper,
+                              Visitor &visitor) {
+        if (!readyForRange) {
+            ReadyForRange();
+        }
+        char *buf = new char[8];
+        for (int i = 0; i < count; i++) {
+            if (keys[i] != bufKeys[i % BUFSIZE]) {
+                pthread_mutex_lock(&mu_);
+                if (keys[i] != bufKeys[i % BUFSIZE]) {
+                    read(valueFile, (bufValues + 4096 * (i % BUFSIZE)), 4096);
+                    bufKeys[i % BUFSIZE] = keys[i];
+                }
+                pthread_mutex_unlock(&mu_);
+            }
+            LongToChars(keys[i], buf);
+//            for (int j = 0; j < 8; j ++) {
+//                std::cout<<(int)buf[j]<<' ';
+//            }
+//            std::cout<<"read"<<keys[i]<<std::endl;
+            visitor.Visit(*(new PolarString(buf, 8)), *(new PolarString(bufValues + 4096 * (i % BUFSIZE), 4096)));
+        }
+
+        pthread_mutex_lock(&mu_);
+        pthread_mutex_unlock(&mu_);
+        return kSucc;
+    }
 
 }  // namespace polar_race
