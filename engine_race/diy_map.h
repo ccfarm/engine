@@ -5,11 +5,12 @@
 #define MAPSIZE 64000
 
 namespace polar_race {
-    class Entry{
+class Entry{
     public:
         Entry(polar_race::PolarString& _key, int64_t _value) {
             key = _key;
             value = _value;
+            next = 0;
         }
         polar_race::PolarString GetKey() {
             return key;
@@ -33,12 +34,19 @@ namespace polar_race {
     public:
         Map() {
             //hashKey = new uint32_t[MAPSIZE];
-            values = new Entry*[MAPSIZE];
+            //values = new Entry*[MAPSIZE];
+            values = (Entry **)malloc(MAPSIZE * 8);
+            memset(values, 0, sizeof(char) * 10);
+            //std::cout<<(int64_t)(*values)<<std::endl;
+            *values = 0;
+            //std::cout<<(int64_t)(*values)<<std::endl;
         }
         void Set(char* _key, int64_t value) {
             polar_race::PolarString* key = new PolarString(_key, 8);
             uint32_t hash = StrHash(_key, 8) % MAPSIZE;
             Entry** next = (values + hash);
+            //std::cout<<(int64_t)(values)<<std::endl<<(int64_t)(values + 1)<<std::endl;
+            //std::cout<<(int64_t)(next)<<std::endl<<(int64_t)(values + hash)<<std::endl;
             //std::cout<<&next<<std::endl;
             //std::cout<<(int64_t)next<<std::endl;
             if (!*next) {
@@ -68,11 +76,13 @@ namespace polar_race {
             (*next)->next = entry;
         }
         int64_t Get(const PolarString& key) {
+            //std::cout<<"hello";
             uint32_t hash = StrHash(key.ToString().c_str(), 8) % MAPSIZE;
-            Entry* next = *(values + hash);
+            Entry *next = *(values + hash);
             //std::cout<<&next<<std::endl;
             //std::cout<<(int64_t)next<<std::endl;
             //next = 0x7fff3be80148;
+            //std::cout<<"hello";
             while (next) {
                 // std::cout<<"get"<<next->GetKey().ToString()<<"=?"<<key.ToString()<<"value"<<next->GetValue()<<std::endl;
                 // for (int i = 0; i < 8; i++) {
@@ -99,6 +109,8 @@ namespace polar_race {
         //uint32_t* hashKey;
         Entry** values;
     };
+
+
 
 
 
