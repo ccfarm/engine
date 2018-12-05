@@ -258,7 +258,12 @@ namespace polar_race {
             bufKeys = (int64_t *)malloc(sizeof(int64_t) * BUFSIZE);
             bufValues = (char *)malloc(sizeof(char) * 4096 * BUFSIZE);
             valueFile = open((path + "/value").c_str(), O_RDWR | O_CREAT, 0644);
-            bufLock = new pthread_mutex_t[BUFSIZE]();
+            //bufLock = new pthread_mutex_t[BUFSIZE]();
+            bufLock = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * BUFSIZE);
+            for (int i = 0; i < BUFSIZE; i++) {
+                bufLock[i] = PTHREAD_MUTEX_INITIALIZER;
+            }
+            std::cout<<"5"<<std::endl;
             readyForRange = true;
         }
         pthread_mutex_unlock(&mu_);
@@ -269,16 +274,20 @@ namespace polar_race {
         if (!readyForRange) {
             ReadyForRange();
         }
+        std::cout<<"6"<<std::endl;
         char *buf = new char[8];
         for (int i = 0; i < count; i++) {
+            if (i < 10) {
+              std::cout<<"7"<<std::endl;
+            }
             if (keys[i] != bufKeys[i % BUFSIZE]) {
-                pthread_mutex_lock(bufLock + i);
+                pthread_mutex_lock(bufLock+(i % BUFSIZE));
                 if (keys[i] != bufKeys[i % BUFSIZE]) {
                     lseek(valueFile, values[i], SEEK_SET);
                     read(valueFile, (bufValues + 4096 * (i % BUFSIZE)), 4096);
                     bufKeys[i % BUFSIZE] = keys[i];
                 }
-                pthread_mutex_unlock(bufLock + i);
+                pthread_mutex_unlock(bufLock+(i % BUFSIZE));
             }
             LongToChars(keys[i], buf);
 
