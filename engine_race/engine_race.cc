@@ -9,7 +9,7 @@
 #include "engine_race.h"
 #include <iostream>
 #define FILENUM 256
-#define BUFSIZE 256
+#define BUFSIZE 25600
 
 namespace polar_race {
     void* excitThread() {
@@ -243,6 +243,14 @@ namespace polar_race {
 //                        values[j] = t;
 //                    }
 //                }
+            for (int i = 0; i < 10; i++) {
+                LongToChars(keys[i], buf);
+                for (int j = 0; j < 8; j ++) {
+                    std::cout<<(int)buf[j]<<' ';
+                }
+                std::cout<<"readyForRange "<<values[i]<<std::endl;
+            }
+            
             qsort((uint64_t*)keys, (uint64_t*)values, 0, count - 1);
 
             for (int i = 0; i < 10; i++) {
