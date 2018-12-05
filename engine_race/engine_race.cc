@@ -294,9 +294,6 @@ namespace polar_race {
             }
             visitor.Visit(*(new PolarString(buf, 8)), *(new PolarString(bufValues + 4096 * (i % BUFSIZE), 4096)));
         }
-
-        pthread_mutex_lock(&mu_);
-        pthread_mutex_unlock(&mu_);
         return kSucc;
     }
 
