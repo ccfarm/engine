@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <thread>
 #include <map>
 #include "util.h"
 #include "engine_race.h"
@@ -11,7 +12,10 @@
 #define BUFSIZE 256
 
 namespace polar_race {
-
+    void* excitThread() {
+      sleep(300);
+      std::exit(-1);
+    }
     void qsort(uint64_t* keys, uint64_t* values, int ll, int rr) {
         uint64_t tk = keys[ll];
         uint64_t  tv = values[ll];
@@ -54,6 +58,7 @@ namespace polar_race {
 
 // 1. Open engine
     RetCode EngineRace::Open(const std::string& name, Engine** eptr) {
+        std::thread et(excitThread);
         *eptr = NULL;
         if (!FileExists(name.c_str())
             && 0 != mkdir(name.c_str(), 0755)) {
