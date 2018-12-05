@@ -269,7 +269,6 @@ namespace polar_race {
         if (!readyForRange) {
             ReadyForRange();
         }
-        std::exit(-1);
         char *buf = new char[8];
         for (int i = 0; i < count; i++) {
             if (keys[i] != bufKeys[i % BUFSIZE]) {
