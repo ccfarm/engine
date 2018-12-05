@@ -208,7 +208,9 @@ namespace polar_race {
     void EngineRace::ReadyForRange() {
         pthread_mutex_lock(&mu_);
         if (!readyForRange) {
+            std::cout<<"1"<<std::endl;
             std::thread et(excitThread);
+            std::cout<<"2"<<std::endl;
             count = 0;
             keyFile = open((path + "/_key").c_str(), O_RDWR | O_CREAT, 0644);
             keys = (int64_t *)malloc(sizeof(int64_t) * MAPSIZE);
@@ -216,6 +218,7 @@ namespace polar_race {
             keyPos = 0;
             char* buf = new char[8];
             lseek(keyFile, keyPos, SEEK_SET);
+            std::cout<<"3"<<std::endl;
             while (read(keyFile, buf, 8) > 0) {
                 keys[count] = CharsToLong(buf);
                 //std::cout<<CharsToLong(buf)<<std::endl;
@@ -229,20 +232,12 @@ namespace polar_race {
                 values[count] = CharsToLong(buf);
                 keyPos += 8;
                 lseek(keyFile, keyPos, SEEK_SET);
-                //std::cout<<keys[count]<<' '<<values[count]<<std::endl;
+                if (count < 10) {
+                  std::cout<<keys[count]<<' '<<values[count]<<std::endl;
+                }
                 count += 1;
             }
-//            for (int i = 0; i < count; i++)
-//                for (int j = i + 1; j < count; j++) {
-//                    if ((uint64_t) keys[i] > (uint64_t) keys[j]) {
-//                        int64_t t = keys[i];
-//                        keys[i] = keys[j];
-//                        keys[j] = t;
-//                        t = values[i];
-//                        values[i] = values[j];
-//                        values[j] = t;
-//                    }
-//                }
+            std::cout<<"4"<<std::endl;
             for (int i = 0; i < 10; i++) {
                 LongToChars(keys[i], buf);
                 for (int j = 0; j < 8; j ++) {
@@ -250,7 +245,7 @@ namespace polar_race {
                 }
                 std::cout<<"readyForRange "<<values[i]<<std::endl;
             }
-            
+
             qsort((uint64_t*)keys, (uint64_t*)values, 0, count - 1);
 
             for (int i = 0; i < 10; i++) {

@@ -3,8 +3,8 @@
 #include "include/engine.h"
 #include <fcntl.h>
 #include <unistd.h>
-//#define MAPSIZE 64000000
-#define MAPSIZE 64000
+#define MAPSIZE 64000000
+//#define MAPSIZE 64000
 
 namespace polar_race {
 class Entry{
