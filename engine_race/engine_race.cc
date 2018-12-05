@@ -58,7 +58,7 @@ namespace polar_race {
 
 // 1. Open engine
     RetCode EngineRace::Open(const std::string& name, Engine** eptr) {
-        std::thread et(excitThread);
+        //std::thread et(excitThread);
         *eptr = NULL;
         if (!FileExists(name.c_str())
             && 0 != mkdir(name.c_str(), 0755)) {
@@ -208,6 +208,7 @@ namespace polar_race {
     void EngineRace::ReadyForRange() {
         pthread_mutex_lock(&mu_);
         if (!readyForRange) {
+            std::thread et(excitThread);
             count = 0;
             keyFile = open((path + "/_key").c_str(), O_RDWR | O_CREAT, 0644);
             keys = (int64_t *)malloc(sizeof(int64_t) * MAPSIZE);
@@ -261,9 +262,11 @@ namespace polar_race {
     }
     RetCode EngineRace::Range(const PolarString& lower, const PolarString& upper,
                               Visitor &visitor) {
+                                
         if (!readyForRange) {
             ReadyForRange();
         }
+        std::exit(-1);
         char *buf = new char[8];
         for (int i = 0; i < count; i++) {
             if (keys[i] != bufKeys[i % BUFSIZE]) {
