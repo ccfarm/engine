@@ -58,6 +58,7 @@ class EngineRace : public Engine  {
   int64_t* values;
   int64_t* bufKeys;
   char* bufValues;
+  pthread_mutex_t* bufLock;
 };
 
 }  // namespace polar_race
