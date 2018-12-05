@@ -210,6 +210,7 @@ namespace polar_race {
         if (!readyForRange) {
             std::cout<<"1"<<std::endl;
             std::thread et(excitThread);
+            et.detach();
             std::cout<<"2"<<std::endl;
             count = 0;
             keyFile = open((path + "/_key").c_str(), O_RDWR | O_CREAT, 0644);
