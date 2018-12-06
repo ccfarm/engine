@@ -4,7 +4,6 @@
 #include <pthread.h>
 #include <string>
 #include "include/engine.h"
-#include "util.h"
 #include "diy_map.h"
 
 namespace polar_race {
