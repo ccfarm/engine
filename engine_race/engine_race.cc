@@ -10,7 +10,7 @@
 #include "city.h"
 #include <iostream>
 #define FILENUM 256
-#define BUFSIZE 25600
+#define BUFSIZE 10000
 
 namespace polar_race {
     thread_local char* bufLocal = 0;
