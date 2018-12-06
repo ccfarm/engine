@@ -7,29 +7,30 @@
 //#define MAPSIZE 64000
 
 namespace polar_race {
-class Entry{
+
+    class Entry{
     public:
-        Entry(polar_race::PolarString& _key, int64_t _value) {
+        Entry(int64_t _key, int16_t _value) {
             key = _key;
             value = _value;
             next = 0;
         }
-        polar_race::PolarString GetKey() {
+        int64_t GetKey() {
             return key;
         }
-        int64_t GetValue() {
+        int16_t GetValue() {
             return value;
         }
 
-        void SetValue(int64_t newValue) {
+        void SetValue(int16_t newValue) {
             value = newValue;
         }
 
         polar_race::Entry* next;
 
     private:
-        polar_race::PolarString key;
-        int64_t value;
+        int64_t key;
+        int16_t value;
     };
 
     class Map  {
@@ -38,48 +39,60 @@ class Entry{
             //hashKey = new uint32_t[MAPSIZE];
             //values = new Entry*[MAPSIZE];
             values = (Entry **)malloc(MAPSIZE * 8);
-            memset(values, 0, sizeof(char) * 10);
+            memset(values, 0, sizeof(Entry**) * MAPSIZE);
             //std::cout<<(int64_t)(*values)<<std::endl;
             *values = 0;
             //std::cout<<(int64_t)(*values)<<std::endl;
         }
-        void Set(char* _key, int64_t value) {
-            polar_race::PolarString* key = new PolarString(_key, 8);
-            uint32_t hash = StrHash(_key, 8) % MAPSIZE;
+        void Set(int64_t key, int16_t value) {
+            uint32_t hash = StrHash((char*)(&key), 8) % MAPSIZE;
+            //std::cout<<hash<<std::endl;
             Entry** next = (values + hash);
+//            for (int i = 0; i < 8; i++) {
+//                std::cout<<(int)(*key)[i]<<' ';
+//            }
+//            std::cout<<std::endl;
+//            std::cout<<value<<"set"<<std::endl;
             //std::cout<<(int64_t)(values)<<std::endl<<(int64_t)(values + 1)<<std::endl;
             //std::cout<<(int64_t)(next)<<std::endl<<(int64_t)(values + hash)<<std::endl;
             //std::cout<<&next<<std::endl;
             //std::cout<<(int64_t)next<<std::endl;
             if (!*next) {
-                *next = new Entry(*key, value);
+                *next = new Entry(key, value);
                 //std::cout<<(int64_t)next<<std::endl;
                 return;
             }
-            if ((*next)->GetKey() == *key) {
+            if ((*next)->GetKey() == key) {
                 (*next)->SetValue(value);
-                delete key;
-                delete _key;
                 return;
             }
+            int count = 0;
             while ((*next)->next) {
-                if ((*next)->next->GetKey() == *key) {
+                count += 1;
+                //std::cout<<count<<hash<<std::endl;
+                if ((*next)->next->GetKey() == key) {
                     (*next)->next->SetValue(value);
-                    delete key;
-                    delete _key;
+                    //std::cout<<count<<hash<<std::endl;
                     return;
                 }
                 else
                 {
+                    //std::cout<<count<<hash<<std::endl;
                     next = &((*next)->next);
                 }
             }
-            Entry* entry = new Entry(*key, value);
-            (*next)->next = entry;
+            //Entry* entry = new Entry(*key, value);
+            (*next)->next = new Entry(key, value);
         }
-        int64_t Get(const PolarString& key) {
+        int16_t Get(int64_t key) {
             //std::cout<<"hello";
-            uint32_t hash = StrHash(key.ToString().c_str(), 8) % MAPSIZE;
+//            for (int i = 0; i < 8; i++) {
+//                std::cout<<(int)(key)[i]<<' ';
+//            }
+//            std::cout<<std::endl;
+//            std::cout<<"get"<<std::endl;
+            uint32_t hash = StrHash((char*)(&key), 8) % MAPSIZE;
+            //std::cout<<hash<<std::endl;
             Entry **next = (values + hash);
 //             for (int i = 0; i < 8; i++) {
 //                 std::cout<<(int)key[i]<<' ';
@@ -114,7 +127,7 @@ class Entry{
         void Write(std::string path) {
             int keyFile = open((path + "/_key").c_str(), O_RDWR | O_CREAT, 0644);
             Entry **next;
-            int block = 64 * 1024;
+            int block = 64 * 1024 * 5;
             char* buf = (char *) malloc(block);
             memset(buf, 0, sizeof(char) * block);
             char* buf8 = (char *) malloc(8);
@@ -125,14 +138,26 @@ class Entry{
                 Entry **next = (values + i);
                 while (*next) {
                     //memcmp((*next)->GetKey().data(),(buf+count),  8);
-                    for (int j = 0; j < 8; j++) {
-                        *(buf+count + j) = (*next)->GetKey().data()[j];
-                        //std::cout<<(int)(*next)->GetKey().data()[j]<<' ';
-                    }
+//                    for (int j = 0; j < 8; j++) {
+//                        *(buf+count + j) = (*next)->GetKey().data()[j];
+//                        //std::cout<<(int)(*next)->GetKey().data()[j]<<' ';
+//                    }
+                    LongToChars((*next)->GetKey(), buf+count);
                     //std::cout<<std::endl;
                     count += 8;
-                    LongToChars((*next)->GetValue(), buf+count);
-                    count += 8;
+                    ShortToChars((*next)->GetValue(), buf+count);
+                    //std::cout<<(*next)->GetKey()<<"short"<<std::endl;
+                    count += 2;
+
+                    //if (i < 10000) {
+                        int tmp = count - 10;
+                        for (int j = 0; j < 10; j++) {
+                            std::cout<<(int)*(buf + tmp + j)<<' ';
+                        }
+                        std::cout<<std::endl;
+                        std::cout<<(((int64_t)CharsToShort(buf + tmp + 8))<<12)<<std::endl;
+                    //}
+
                     if (count == block) {
                         lseek(keyFile, pos, SEEK_SET);
                         write(keyFile, buf, block);
@@ -154,9 +179,4 @@ class Entry{
         //uint32_t* hashKey;
         Entry** values;
     };
-
-
-
-
-
 };

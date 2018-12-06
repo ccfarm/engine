@@ -10,122 +10,128 @@
 
 namespace polar_race {
 
-static const int kA = 54059;  // a prime
-static const int kB = 76963;  // another prime
-static const int kFinish = 37;  // also prime
-uint32_t StrHash(const char* s, int size) {
-  uint32_t h = kFinish;
-  while (size > 0) {
-    h = (h * kA) ^ (s[0] * kB);
-    s++;
-    size--;
-  }
-  return h;
-}
-
-int GetDirFiles(const std::string& dir, std::vector<std::string>* result) {
-  int res = 0;
-  result->clear();
-  DIR* d = opendir(dir.c_str());
-  if (d == NULL) {
-    return errno;
-  }
-  struct dirent* entry;
-  while ((entry = readdir(d)) != NULL) {
-    if (strcmp(entry->d_name, "..") == 0 || strcmp(entry->d_name, ".") == 0) {
-      continue;
+    static const int kA = 54059;  // a prime
+    static const int kB = 76963;  // another prime
+    static const int kFinish = 37;  // also prime
+    uint32_t StrHash(const char* s, int size) {
+        uint32_t h = kFinish;
+        while (size > 0) {
+            h = (h * kA) ^ (s[0] * kB);
+            s++;
+            size--;
+        }
+        return h;
     }
-    result->push_back(entry->d_name);
-  }
-  closedir(d);
-  return res;
-}
 
-int GetFileLength(const std::string& file) {
-  struct stat stat_buf;
-  int rc = stat(file.c_str(), &stat_buf);
-  return rc == 0 ? stat_buf.st_size : -1;
-}
-
-int FileAppend(int fd, const std::string& value) {
-  if (fd < 0) {
-    return -1;
-  }
-  size_t value_len = value.size();
-  const char* pos = value.data();
-  while (value_len > 0) {
-    ssize_t r = write(fd, pos, value_len);
-    if (r < 0) {
-      if (errno == EINTR) {
-        continue;  // Retry
-      }
-      return -1;
+    int GetDirFiles(const std::string& dir, std::vector<std::string>* result) {
+        int res = 0;
+        result->clear();
+        DIR* d = opendir(dir.c_str());
+        if (d == NULL) {
+        }
+        struct dirent* entry;
+        while ((entry = readdir(d)) != NULL) {
+            if (strcmp(entry->d_name, "..") == 0 || strcmp(entry->d_name, ".") == 0) {
+                continue;
+            }
+            result->push_back(entry->d_name);
+        }
+        closedir(d);
+        return res;
     }
-    pos += r;
-    value_len -= r;
-  }
-  return 0;
-}
 
-bool FileExists(const std::string& path) {
-  return access(path.c_str(), F_OK) == 0;
-}
-
-void LongToChars(int64_t num, char* chars) {
-    //char* chars = new char[8];
-    int tmp = 56;
-    for (int i = 0; i < 8; i++) {
-        chars[i] = (num >> tmp) & 0xff;
-        tmp -= 8;
+    int GetFileLength(const std::string& file) {
+        struct stat stat_buf;
+        int rc = stat(file.c_str(), &stat_buf);
+        return rc == 0 ? stat_buf.st_size : -1;
     }
-}
 
-int64_t CharsToLong(char* chars) {
-    int64_t  num = 0;
-    for (int i = 0; i < 8; i++) {
+    int FileAppend(int fd, const std::string& value) {
+        if (fd < 0) {
+            return -1;
+        }
+        size_t value_len = value.size();
+        const char* pos = value.data();
+        while (value_len > 0) {
+            ssize_t r = write(fd, pos, value_len);
+            if (r < 0) {
+                return -1;
+            }
+            pos += r;
+            value_len -= r;
+        }
+        return 0;
+    }
+
+    bool FileExists(const std::string& path) {
+        return access(path.c_str(), F_OK) == 0;
+    }
+
+    void LongToChars(int64_t num, char* chars) {
+        //char* chars = new char[8];
+        int tmp = 56;
+        for (int i = 0; i < 8; i++) {
+            chars[i] = (num >> tmp) & 0xff;
+            tmp -= 8;
+        }
+    }
+
+    int64_t CharsToLong(const char* chars) {
+        int64_t  num = 0;
+        for (int i = 0; i < 8; i++) {
+            num <<= 8;
+            num |= (chars[i] & 0xff);
+        }
+        return num;
+    }
+
+    void ShortToChars(int16_t num, char* chars) {
+        chars[0] = (num >> 8) & 0xff;
+        chars[1] = num & 0xff;
+        //std::cout<<(int)chars[0]<<num<<(int)chars[1]<<std::endl;
+    }
+
+    int16_t CharsToShort(const char* chars) {
+        int16_t  num = 0;
+        num |= (chars[0] & 0xff);
         num <<= 8;
-        num |= (chars[i] & 0xff);
+        num |= (chars[1] & 0xff);
+        return num;
     }
-    return num;
-}
 
-static int LockOrUnlock(int fd, bool lock) {
-  errno = 0;
-  struct flock f;
-  memset(&f, 0, sizeof(f));
-  f.l_type = (lock ? F_WRLCK : F_UNLCK);
-  f.l_whence = SEEK_SET;
-  f.l_start = 0;
-  f.l_len = 0;        // Lock/unlock entire file
-  return fcntl(fd, F_SETLK, &f);
-}
+    static int LockOrUnlock(int fd, bool lock) {
+        struct flock f;
+        memset(&f, 0, sizeof(f));
+        f.l_type = (lock ? F_WRLCK : F_UNLCK);
+        f.l_whence = SEEK_SET;
+        f.l_start = 0;
+        f.l_len = 0;        // Lock/unlock entire file
+        return fcntl(fd, F_SETLK, &f);
+    }
 
-int LockFile(const std::string& fname, FileLock** lock) {
-  *lock = NULL;
-  int result = 0;
-  int fd = open(fname.c_str(), O_RDWR | O_CREAT, 0644);
-  if (fd < 0) {
-    result = errno;
-  } else if (LockOrUnlock(fd, true) == -1) {
-    result = errno;
-    close(fd);
-  } else {
-    FileLock* my_lock = new FileLock;
-    my_lock->fd_ = fd;
-    my_lock->name_ = fname;
-    *lock = my_lock;
-  }
-  return result;
-}
+    int LockFile(const std::string& fname, FileLock** lock) {
+        *lock = NULL;
+        int result = 0;
+        int fd = open(fname.c_str(), O_RDWR | O_CREAT, 0644);
+        if (fd < 0) {
+        } else if (LockOrUnlock(fd, true) == -1) {
+            close(fd);
+        } else {
+            FileLock* my_lock = new FileLock;
+            my_lock->fd_ = fd;
+            my_lock->name_ = fname;
+            *lock = my_lock;
+        }
+        return result;
+    }
 
-int UnlockFile(FileLock* lock) {
-  int result = 0;
-  if (LockOrUnlock(lock->fd_, false) == -1) {
-    result = errno;
-  }
-  close(lock->fd_);
-  delete lock;
-  return result;
-}
+    int UnlockFile(FileLock* lock) {
+        int result = 0;
+        if (LockOrUnlock(lock->fd_, false) == -1) {
+        }
+        close(lock->fd_);
+        delete lock;
+        return result;
+    }
 
 }  // namespace polar_race
