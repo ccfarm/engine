@@ -7,7 +7,6 @@
 #include <map>
 #include "util.h"
 #include "engine_race.h"
-#include "city.h"
 #include <iostream>
 #define FILENUM 256
 #define BUFSIZE 10000
