@@ -12,6 +12,8 @@
 #define BUFSIZE 25600
 
 namespace polar_race {
+    thread_local char* bufLocal = 0;
+
     void* excitThread() {
         sleep(300);
         std::exit(-1);
@@ -123,7 +125,7 @@ namespace polar_race {
         valuePos[hash] += 4096;
         pthread_mutex_unlock(valueLock + hash);
         pthread_mutex_lock(&mu_);
-        if (count < 200) {
+        if (count < 500) {
             count += 1;
             for (int i = 0; i < 8; i++) {
                 std::cout<<(int)key[i]<<' ';
@@ -164,7 +166,6 @@ namespace polar_race {
             for (int i = 0; i < FILENUM; i++) {
                 valueLock[i] = PTHREAD_MUTEX_INITIALIZER;
             }
-            buf4096 = new char[4096];
             map->Write(path);
             readyForRead = true;
         }
@@ -194,11 +195,13 @@ namespace polar_race {
         //std::cout<<"mark"<<pos<<std::endl;
         uint32_t hash = StrHash(key.data(), 8) % FILENUM;
 //        std::cout<<"mark"<<hash<<std::endl;
-        char* buf4096 = new char[4096];
+        if (!bufLocal) {
+            bufLocal = new char[4096];
+        }
         pthread_mutex_lock(valueLock + hash);
 //        std::cout<<"mark"<<pos<<std::endl;
         lseek(valueFile[hash], pos, SEEK_SET);
-        read(valueFile[hash], buf4096, 4096);
+        read(valueFile[hash], bufLocal, 4096);
         pthread_mutex_unlock(valueLock + hash);
         // for (int i = 0; i < 8; i++) {
         //   std::cout<<buf4096[i]<<' ';
@@ -213,9 +216,9 @@ namespace polar_race {
 //        }
 //        std::cout<<"range2222"<<std::endl;
 
-        *value = std::string(buf4096, 4096);
+        *value = std::string(bufLocal, 4096);
         pthread_mutex_lock(&mu_);
-        if (count < 200) {
+        if (count < 500) {
 
             count += 1;
             for (int i = 0; i < 8; i++) {
@@ -248,8 +251,8 @@ namespace polar_race {
     void EngineRace::ReadyForRange() {
         pthread_mutex_lock(&mu_);
         if (!readyForRange) {
-            std::thread et(excitThread);
-            et.detach();
+            //std::thread et(excitThread);
+            //et.detach();
             count = 0;
             keyFile = open((path + "/_key").c_str(), O_RDWR | O_CREAT, 0644);
             keys = (int64_t *)malloc(sizeof(int64_t) * MAPSIZE);
