@@ -152,6 +152,10 @@ namespace polar_race {
             char *keyBuf = new char[8];
             std::cout<<"2"<<std::endl;
             while (read(keyFile, keyBuf, 8) > 0) {
+                count += 1;
+                if (count % 100000 == 0){
+                    std::cout<<count<<std::endl;
+                }
                 //lseek(keyFile, keyPos, SEEK_SET);
                 read(keyFile, buf, 2);
                 //std::cout<<(int)buf[0]<<(int)buf[1]<<"short____"<<std::endl;
