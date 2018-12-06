@@ -219,9 +219,12 @@ namespace polar_race {
 
         *value = std::string(bufLocal, 4096);
         pthread_mutex_lock(&mu_);
+        count += 1;
+        if (count > 1000000) {
+                    std::cout<<"byebye"<<std::endl;
+                    std::exit(-1);
+                }
         if (count < 100) {
-
-            count += 1;
             for (int i = 0; i < 8; i++) {
                 std::cout<<(int)key[i]<<' ';
             }
