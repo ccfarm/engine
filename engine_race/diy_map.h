@@ -41,8 +41,22 @@ namespace polar_race {
             values = (Entry **)malloc(MAPSIZE * 8);
             memset(values, 0, sizeof(Entry**) * MAPSIZE);
             //std::cout<<(int64_t)(*values)<<std::endl;
-            *values = 0;
+            //*values = 0;
             //std::cout<<(int64_t)(*values)<<std::endl;
+        }
+        ~Map() {
+            Entry **next;
+            Entry **tmp;
+            for (int i = 0; i < MAPSIZE; i++) {
+                Entry **next = (values + i);
+                while (*next) {
+                    tmp = next;
+                    next = &((*next)->next);
+                    delete *tmp;
+                }
+            }
+            free(values);
+            std::cout<<"free map"<<std::endl;
         }
         void Set(int64_t key, int16_t value) {
             uint32_t hash = StrHash((char*)(&key), 8) % MAPSIZE;
@@ -150,12 +164,12 @@ namespace polar_race {
                     count += 2;
 
                     //if (i < 10000) {
-                        // int tmp = count - 10;
-                        // for (int j = 0; j < 10; j++) {
-                        //     std::cout<<(int)*(buf + tmp + j)<<' ';
-                        // }
-                        // std::cout<<std::endl;
-                        // std::cout<<(((int64_t)CharsToShort(buf + tmp + 8))<<12)<<std::endl;
+//                        int tmp = count - 10;
+//                        for (int j = 0; j < 10; j++) {
+//                            std::cout<<(int)*(buf + tmp + j)<<' ';
+//                        }
+//                        std::cout<<std::endl;
+//                        std::cout<<(((int64_t)CharsToShort(buf + tmp + 8))<<12)<<std::endl;
                     //}
 
                     if (count == block) {

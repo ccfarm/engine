@@ -125,7 +125,7 @@ namespace polar_race {
         valuePos[hash] += 4096;
         pthread_mutex_unlock(valueLock + hash);
         pthread_mutex_lock(&mu_);
-        if (count < 500) {
+        if (count < 100) {
             count += 1;
             for (int i = 0; i < 8; i++) {
                 std::cout<<(int)key[i]<<' ';
@@ -196,6 +196,7 @@ namespace polar_race {
         uint32_t hash = StrHash(key.data(), 8) % FILENUM;
 //        std::cout<<"mark"<<hash<<std::endl;
         if (!bufLocal) {
+            //std::cout<<"new";
             bufLocal = new char[4096];
         }
         pthread_mutex_lock(valueLock + hash);
@@ -218,7 +219,7 @@ namespace polar_race {
 
         *value = std::string(bufLocal, 4096);
         pthread_mutex_lock(&mu_);
-        if (count < 500) {
+        if (count < 100) {
 
             count += 1;
             for (int i = 0; i < 8; i++) {
@@ -251,8 +252,11 @@ namespace polar_race {
     void EngineRace::ReadyForRange() {
         pthread_mutex_lock(&mu_);
         if (!readyForRange) {
-            //std::thread et(excitThread);
-            //et.detach();
+//            std::thread et(excitThread);
+//            et.detach();
+            if (map) {
+                delete map;
+            }
             count = 0;
             keyFile = open((path + "/_key").c_str(), O_RDWR | O_CREAT, 0644);
             keys = (int64_t *)malloc(sizeof(int64_t) * MAPSIZE);
