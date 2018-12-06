@@ -192,6 +192,7 @@ namespace polar_race {
         //std::cout<<"mark"<<pos<<std::endl;
         uint32_t hash = StrHash(key.data(), 8) % FILENUM;
 //        std::cout<<"mark"<<hash<<std::endl;
+        char* buf4096 = new char[4096];
         pthread_mutex_lock(valueLock + hash);
 //        std::cout<<"mark"<<pos<<std::endl;
         lseek(valueFile[hash], pos, SEEK_SET);

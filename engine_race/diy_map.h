@@ -150,12 +150,12 @@ namespace polar_race {
                     count += 2;
 
                     //if (i < 10000) {
-                        int tmp = count - 10;
-                        for (int j = 0; j < 10; j++) {
-                            std::cout<<(int)*(buf + tmp + j)<<' ';
-                        }
-                        std::cout<<std::endl;
-                        std::cout<<(((int64_t)CharsToShort(buf + tmp + 8))<<12)<<std::endl;
+                        // int tmp = count - 10;
+                        // for (int j = 0; j < 10; j++) {
+                        //     std::cout<<(int)*(buf + tmp + j)<<' ';
+                        // }
+                        // std::cout<<std::endl;
+                        // std::cout<<(((int64_t)CharsToShort(buf + tmp + 8))<<12)<<std::endl;
                     //}
 
                     if (count == block) {
