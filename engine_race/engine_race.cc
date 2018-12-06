@@ -277,6 +277,10 @@ namespace polar_race {
                     std::cout<<keys[count]<<' '<<values[count]<<std::endl;
                 }
                 count += 1;
+                if (count > 1000000) {
+                    std::cout<<"byebye"<<std::endl;
+                    std::exit(-1);
+                }
             }
             for (int i = 0; i < 10; i++) {
                 LongToChars(keys[i], buf);
