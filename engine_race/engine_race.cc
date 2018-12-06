@@ -114,7 +114,7 @@ namespace polar_race {
         if (!readyForWrite) {
             ReadyForWrite();
         }
-        uint32_t hash = CityHash32(key.data(), 8) % FILENUM;
+        uint32_t hash = StrHash(key.data(), 8) % FILENUM;
         pthread_mutex_lock(valueLock + hash);
         write(valueFile[hash], value.data(), 4096);
         pthread_mutex_lock(&mu_);
@@ -194,7 +194,7 @@ namespace polar_race {
         int64_t pos = _pos;
         pos <<= 12;
         //std::cout<<"mark"<<pos<<std::endl;
-        uint32_t hash = CityHash32(key.data(), 8) % FILENUM;
+        uint32_t hash = StrHash(key.data(), 8) % FILENUM;
 //        std::cout<<"mark"<<hash<<std::endl;
         if (!bufLocal) {
             //std::cout<<"new";
@@ -334,7 +334,7 @@ namespace polar_race {
                 pthread_mutex_lock(bufLock+(i % BUFSIZE));
                 if (keys[i] != bufKeys[i % BUFSIZE]) {
                     LongToChars(keys[i], buf);
-                    uint32_t hash = CityHash32(buf, 8) % FILENUM;
+                    uint32_t hash = StrHash(buf, 8) % FILENUM;
 //                    std::cout<<"mark"<<hash<<std::endl;
 //                    std::cout<<"mark"<<values[i]<<std::endl;
                     lseek(valueFile[hash], values[i], SEEK_SET);

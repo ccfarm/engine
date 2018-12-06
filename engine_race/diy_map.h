@@ -60,7 +60,7 @@ namespace polar_race {
             std::cout<<"free map"<<std::endl;
         }
         void Set(int64_t key, int16_t value) {
-            uint32_t hash = CityHash32((char*)(&key), 8) % MAPSIZE;
+            uint32_t hash = StrHash((char*)(&key), 8) % MAPSIZE;
             //std::cout<<hash<<std::endl;
             Entry** next = (values + hash);
 //            for (int i = 0; i < 8; i++) {
@@ -106,7 +106,7 @@ namespace polar_race {
 //            }
 //            std::cout<<std::endl;
 //            std::cout<<"get"<<std::endl;
-            uint32_t hash = CityHash32((char*)(&key), 8) % MAPSIZE;
+            uint32_t hash = StrHash((char*)(&key), 8) % MAPSIZE;
             //std::cout<<hash<<std::endl;
             Entry **next = (values + hash);
 //             for (int i = 0; i < 8; i++) {
