@@ -143,12 +143,14 @@ namespace polar_race {
     void EngineRace::ReadyForRead() {
         pthread_mutex_lock(&mu_);
         if (!readyForRead) {
+            std::cout<<"1"<<std::endl;
             count = 0;
             map = new Map();
             buf = new char[8];
             keyFile = open((path + "/key").c_str(), O_RDWR | O_CREAT, 0644);
             keyPos = 0;
             char *keyBuf = new char[8];
+            std::cout<<"2"<<std::endl;
             while (read(keyFile, keyBuf, 8) > 0) {
                 //lseek(keyFile, keyPos, SEEK_SET);
                 read(keyFile, buf, 2);
@@ -158,6 +160,7 @@ namespace polar_race {
                 //std::cout<<"mark"<<CharsToLong(buf)<<std::endl;
                 //std::cout<<CharsToShort(buf)<<"short____"<<std::endl;
             }
+            std::cout<<"3"<<std::endl;
             valueFile = new int[FILENUM];
             for (int i = 0; i < FILENUM; i++) {
                 valueFile[i] = open((path + "/value" + std::to_string(i)).c_str(), O_RDWR | O_CREAT, 0644);
@@ -167,6 +170,7 @@ namespace polar_race {
                 valueLock[i] = PTHREAD_MUTEX_INITIALIZER;
             }
             map->Write(path);
+            std::cout<<"4"<<std::endl;
             readyForRead = true;
         }
         pthread_mutex_unlock(&mu_);
@@ -175,7 +179,9 @@ namespace polar_race {
 // 4. Read value of a key
     RetCode EngineRace::Read(const PolarString& key, std::string* value) {
         if (!readyForRead) {
+            std::cout<<"5"<<std::endl;
             ReadyForRead();
+            std::cout<<"6"<<std::endl;
         }
         int16_t _pos = map->Get(CharsToLong(key.data()));
         //std::cout<<_pos<<"short____"<<std::endl;
