@@ -254,9 +254,9 @@ namespace polar_race {
         if (!readyForRange) {
 //            std::thread et(excitThread);
 //            et.detach();
-            if (map) {
-                delete map;
-            }
+            // if (map) {
+            //     delete map;
+            // }
             count = 0;
             keyFile = open((path + "/_key").c_str(), O_RDWR | O_CREAT, 0644);
             keys = (int64_t *)malloc(sizeof(int64_t) * MAPSIZE);
