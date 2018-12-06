@@ -122,7 +122,8 @@ namespace polar_race {
         pthread_mutex_unlock(&mu_);
         valuePos[hash] += 4096;
         pthread_mutex_unlock(valueLock + hash);
-        if (count < 100) {
+        pthread_mutex_lock(&mu_);
+        if (count < 200) {
             count += 1;
             for (int i = 0; i < 8; i++) {
                 std::cout<<(int)key[i]<<' ';
@@ -133,6 +134,7 @@ namespace polar_race {
             }
             std::cout<<"write"<<std::endl;
         }
+        pthread_mutex_unlock(&mu_);
         return kSucc;
     }
 
@@ -212,8 +214,8 @@ namespace polar_race {
 //        std::cout<<"range2222"<<std::endl;
 
         *value = std::string(buf4096, 4096);
-        //pthread_mutex_lock(&mu_);
-        if (count < 100) {
+        pthread_mutex_lock(&mu_);
+        if (count < 200) {
 
             count += 1;
             for (int i = 0; i < 8; i++) {
@@ -226,7 +228,7 @@ namespace polar_race {
             std::cout<<"read"<<std::endl;
 
         }
-        //pthread_mutex_unlock(&mu_);
+        pthread_mutex_unlock(&mu_);
 
         return kSucc;
     }
