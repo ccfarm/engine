@@ -77,18 +77,19 @@ namespace polar_race {
         pthread_mutex_lock(&mu_);
         if (!readyForWrite) {
             count = 0;
-            keyPos = GetFileLength(path + "/key");
-            if (keyPos < 0) {
-                keyPos = 0;
-            }
+            // keyPos = GetFileLength(path + "/key");
+            // if (keyPos < 0) {
+            //     keyPos = 0;
+            // }
             keyFile = open((path + "/key").c_str(), O_RDWR | O_CREAT, 0644);
-            keyPos = GetFileLength(path + "/key");
+            keyPos = 0;
             lseek(keyFile, keyPos, SEEK_SET);
             std::cout<<keyPos<<std::endl;
-            valuePos = GetFileLength(path + "/value");
-            if (valuePos < 0) {
-                valuePos = 0;
-            }
+            // valuePos = GetFileLength(path + "/value");
+            // if (valuePos < 0) {
+            //     valuePos = 0;
+            // }
+            valuePos = 0;
             valueFile = open((path + "/value").c_str(), O_RDWR | O_CREAT, 0644);
             lseek(valueFile, valuePos, SEEK_SET);
             std::cout<<valuePos<<std::endl;
