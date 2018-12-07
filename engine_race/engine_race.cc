@@ -73,6 +73,12 @@ namespace polar_race {
 
 // 2. Close engine
     EngineRace::~EngineRace() {
+        if (valuePos) {
+            for (int i=0; i<FILENUM; i++) {
+                std::cout<<valuePos[i]<<std::endl;
+                std::cout<<(int16_t)(valuePos[i]>>12)<<std::endl;
+            }
+        }
         std::cout<<"close"<<std::endl;
     }
 
