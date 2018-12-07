@@ -16,6 +16,7 @@
 namespace polar_race {
     thread_local char* bufLocal = 0;
     thread_local int threadId = -1;
+    pthread_mutex_t lock_ = PTHREAD_MUTEX_INITIALIZER;
     //thread_local int threadNum = 0;
 
     void* excitThread() {
@@ -269,18 +270,32 @@ namespace polar_race {
 // Therefore the following call will traverse the entire database:
 //   Range("", "", visitor)
 
-    void* ReadT(int i, int count, int* posMark, int* valueFile, int64_t* keys, int16_t* values, int64_t* bufKeys,char* bufValues) {
+    void* ReadT(pthread_mutex_t* lock_, pthread_mutex_t** valueLock, int count, int* posMark, int* posMark2, int* valueFile, int64_t* keys, int16_t* values, int64_t* bufKeys,char* bufValues) {
         char *buf = new char[8];
-        while (i < count) {
+        int i;
+        while (true) {
+            pthread_mutex_lock(lock_);
+            i = *posMark2;
+            *posMark2 += 1;
+            pthread_mutex_unlock(lock_);
+            if (i >= count) {
+                break;
+            }
             //std::cout<<i<<' '<<*posMark<<"posMark"<<std::endl;
-            while (i - *posMark > 1000);
+//            while (i - *posMark > 1000) {
+//                std::this_thread::yield;
+//                //std::cout<<"rest\n";
+//            }
             LongToChars(keys[i], buf);
             uint32_t hash = StrHash(buf, 8) % FILENUM;
+
+            pthread_mutex_lock(*valueLock + hash);
             lseek(valueFile[hash], ((int64_t)values[i])<<12, SEEK_SET);
             read(valueFile[hash], bufValues + 4096 * (i % BUFSIZE), 4096);
+            pthread_mutex_unlock(*valueLock + hash);
             bufKeys[i % BUFSIZE] = keys[i];
             //std::cout<<'a'<<i<<' '<<keys[i]<<' '<<bufKeys[i % BUFSIZE]<<std::endl;
-            i += THREADNUM;
+            //std::this_thread::yield;
         }
         std::cout<<"readt end\n";
     }
@@ -302,6 +317,7 @@ namespace polar_race {
             keyPos = 0;
             char* buf = new char[8];
             lseek(keyFile, keyPos, SEEK_SET);
+            std::cout<<time(NULL) - _time<<"beforeRead"<<std::endl;
             while (read(keyFile, buf, 8) > 0) {
                 keys[count] = CharsToLong(buf);
                 keyPos += 8;
@@ -323,9 +339,9 @@ namespace polar_race {
                 }
                 std::cout<<"readyForRange "<<values[i]<<std::endl;
             }
-
+            std::cout<<time(NULL) - _time<<"beforeSort"<<std::endl;
             qsort((uint64_t*)keys, values, 0, count - 1);
-
+            std::cout<<time(NULL) - _time<<"afterSort"<<std::endl;
             for (int i = 0; i < 10; i++) {
                 LongToChars(keys[i], buf);
                 for (int j = 0; j < 8; j ++) {
@@ -373,14 +389,15 @@ namespace polar_race {
 
         //std::cout<<threadId<<"threadId\n";
         if (threadId == 0) {
-            std::thread rt1(ReadT, 0, count, &posMark, valueFile, keys, values, bufKeys, bufValues);
+            posMark2 = 0;
+            std::thread rt1(ReadT, &lock_,  &valueLock, count, &posMark, &posMark2, valueFile, keys, values, bufKeys, bufValues);
             rt1.detach();
-//            std::thread rt2(ReadT, 1, count, &posMark, valueFile, keys, values, bufKeys, bufValues);
-//            rt2.detach();
-//            std::thread rt3(ReadT, 2, count, &posMark, valueFile, keys, values, bufKeys, bufValues);
-//            rt3.detach();
-//            std::thread rt4(ReadT, 3, count, &posMark, valueFile, keys, values, bufKeys, bufValues);
-//            rt4.detach();
+            std::thread rt2(ReadT, &lock_,  &valueLock, count, &posMark, &posMark2, valueFile, keys, values, bufKeys, bufValues);
+            rt2.detach();
+            std::thread rt3(ReadT, &lock_,  &valueLock, count, &posMark, &posMark2, valueFile, keys, values, bufKeys, bufValues);
+            rt3.detach();
+            std::thread rt4(ReadT, &lock_,  &valueLock, count, &posMark, &posMark2, valueFile, keys, values, bufKeys, bufValues);
+            rt4.detach();
             for (int i = 0; i < count; i++) {
                 while (keys[i] != bufKeys[i % BUFSIZE]);
                 LongToChars(keys[i], buf);
@@ -404,7 +421,7 @@ namespace polar_race {
                 //std::cout<<"threadId\n";
             }
         }
-        std::cout<<threadId<<"done";
+        std::cout<<threadId<<' '<<count<<"done\n";
 
 
         return kSucc;

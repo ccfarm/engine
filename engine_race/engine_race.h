@@ -65,7 +65,8 @@ namespace polar_race {
         pthread_mutex_t* bufLock;
         int stage;
         int64_t _time;
-        int posMark = 0;
+        int posMark;
+        int posMark2;
     };
 
 }  // namespace polar_race
