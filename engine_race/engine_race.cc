@@ -8,11 +8,15 @@
 #include "util.h"
 #include "engine_race.h"
 #include <iostream>
+#include <time.h>
 #define FILENUM 4096
-#define BUFSIZE 10000
+#define BUFSIZE 20000
+#define THREADNUM 1
 
 namespace polar_race {
     thread_local char* bufLocal = 0;
+    thread_local int threadId = -1;
+    //thread_local int threadNum = 0;
 
     void* excitThread() {
         sleep(300);
@@ -52,6 +56,7 @@ namespace polar_race {
     }
 
     Engine::~Engine() {
+
     }
 
 /*
@@ -73,13 +78,14 @@ namespace polar_race {
 
 // 2. Close engine
     EngineRace::~EngineRace() {
-        if (valuePos) {
-            for (int i=0; i<FILENUM; i++) {
-                std::cout<<valuePos[i]<<std::endl;
-                std::cout<<(int16_t)(valuePos[i]>>12)<<std::endl;
-            }
-        }
-        std::cout<<"close"<<std::endl;
+//        if (valuePos) {
+//            for (int i=0; i<FILENUM; i++) {
+//                std::cout<<valuePos[i]<<std::endl;
+//                std::cout<<(int16_t)(valuePos[i]>>12)<<std::endl;
+//            }
+//        }
+//        time(NULL) - _time;
+        std::cout<<time(NULL) - _time<<"close"<<std::endl;
     }
 
     void EngineRace::ReadyForWrite() {
@@ -263,6 +269,22 @@ namespace polar_race {
 // Therefore the following call will traverse the entire database:
 //   Range("", "", visitor)
 
+    void* ReadT(int i, int count, int* posMark, int* valueFile, int64_t* keys, int16_t* values, int64_t* bufKeys,char* bufValues) {
+        char *buf = new char[8];
+        while (i < count) {
+            //std::cout<<i<<' '<<*posMark<<"posMark"<<std::endl;
+            while (i - *posMark > 1000);
+            LongToChars(keys[i], buf);
+            uint32_t hash = StrHash(buf, 8) % FILENUM;
+            lseek(valueFile[hash], ((int64_t)values[i])<<12, SEEK_SET);
+            read(valueFile[hash], bufValues + 4096 * (i % BUFSIZE), 4096);
+            bufKeys[i % BUFSIZE] = keys[i];
+            //std::cout<<'a'<<i<<' '<<keys[i]<<' '<<bufKeys[i % BUFSIZE]<<std::endl;
+            i += THREADNUM;
+        }
+        std::cout<<"readt end\n";
+    }
+
     void EngineRace::ReadyForRange() {
         pthread_mutex_lock(&mu_);
         if (!readyForRange) {
@@ -271,6 +293,7 @@ namespace polar_race {
 //            if (map) {
 //                delete map;
 //            }
+            threadId = 0;
             stage = 3;
             count = 0;
             keyFile = open((path + "/_key").c_str(), O_RDWR | O_CREAT, 0644);
@@ -324,10 +347,14 @@ namespace polar_race {
             for (int i = 0; i < FILENUM; i++) {
                 valueLock[i] = PTHREAD_MUTEX_INITIALIZER;
             }
+
             readyForRange = true;
         }
         pthread_mutex_unlock(&mu_);
     }
+
+
+
     RetCode EngineRace::Range(const PolarString& lower, const PolarString& upper,
                               Visitor &visitor) {
 
@@ -336,47 +363,50 @@ namespace polar_race {
         }
         PolarString* key;
         PolarString* value;
-        std::cout<<"6"<<std::endl;
-        char *buf = new char[8];
-        for (int i = 0; i < count; i++) {
-            if (keys[i] != bufKeys[i % BUFSIZE]) {
-                pthread_mutex_lock(bufLock+(i % BUFSIZE));
-                if (keys[i] != bufKeys[i % BUFSIZE]) {
-                    LongToChars(keys[i], buf);
-                    uint32_t hash = StrHash(buf, 8) % FILENUM;
-//                    std::cout<<"mark"<<hash<<std::endl;
-//                    std::cout<<"mark"<<values[i]<<std::endl;
-                    lseek(valueFile[hash], ((int64_t)values[i])<<12, SEEK_SET);
-                    read(valueFile[hash], bufValues + 4096 * (i % BUFSIZE), 4096);
-                    bufKeys[i % BUFSIZE] = keys[i];
-//                    int tmpFile = open((path + "/value" + std::to_string(2573)).c_str(), O_RDWR | O_CREAT, 0644);
-//                    char* buf4096 = new char[4096];
-//                    lseek(tmpFile, 0, SEEK_SET);
-//                    read(tmpFile, buf4096, 4096);
-//                    for (int j = 0; j < 8; j ++) {
-//                        std::cout<<(int)(buf4096[j])<<' ';
-//                    }
-//                    std::cout<<"range2222"<<std::endl;
-                }
-                pthread_mutex_unlock(bufLock+(i % BUFSIZE));
+        char* buf = new char[8];
+//        if (threadId == -1) {
+//            pthread_mutex_lock(&mu_);
+//            threadId = threadNum;
+//            threadNum += 1;
+//            pthread_mutex_unlock(&mu_);
+//        }
+
+        //std::cout<<threadId<<"threadId\n";
+        if (threadId == 0) {
+            std::thread rt1(ReadT, 0, count, &posMark, valueFile, keys, values, bufKeys, bufValues);
+            rt1.detach();
+//            std::thread rt2(ReadT, 1, count, &posMark, valueFile, keys, values, bufKeys, bufValues);
+//            rt2.detach();
+//            std::thread rt3(ReadT, 2, count, &posMark, valueFile, keys, values, bufKeys, bufValues);
+//            rt3.detach();
+//            std::thread rt4(ReadT, 3, count, &posMark, valueFile, keys, values, bufKeys, bufValues);
+//            rt4.detach();
+            for (int i = 0; i < count; i++) {
+                while (keys[i] != bufKeys[i % BUFSIZE]);
+                LongToChars(keys[i], buf);
+                key = new PolarString(buf, 8);
+                value = new PolarString(bufValues + 4096 * (i % BUFSIZE), 4096);
+                visitor.Visit(*key, *value);
+                posMark = i;
+                delete key;
+                delete value;
+                //std::cout<<i<<"threadId\n";
             }
-            LongToChars(keys[i], buf);
-            if (i < 100) {
-                for (int j = 0; j < 8; j ++) {
-                    std::cout<<(int)buf[j]<<' ';
-                }
-                std::cout<<"range1"<<std::endl;
-                for (int j = 0; j < 8; j ++) {
-                    std::cout<<(int)*(bufValues + 4096 * (i % BUFSIZE) + j)<<' ';
-                }
-                std::cout<<"range2"<<std::endl;
+        } else {
+            for (int i = 0; i < count; i++) {
+                while (keys[i] != bufKeys[i % BUFSIZE]);
+                LongToChars(keys[i], buf);
+                key = new PolarString(buf, 8);
+                value = new PolarString(bufValues + 4096 * (i % BUFSIZE), 4096);
+                visitor.Visit(*key, *value);
+                delete key;
+                delete value;
+                //std::cout<<"threadId\n";
             }
-            key = new PolarString(buf, 8);
-            value = new PolarString(bufValues + 4096 * (i % BUFSIZE), 4096);
-            visitor.Visit(*key, *value);
-            delete key;
-            delete value;
         }
+        std::cout<<threadId<<"done";
+
+
         return kSucc;
     }
 //    RetCode EngineRace::Range(const PolarString& lower, const PolarString& upper,

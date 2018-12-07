@@ -5,6 +5,8 @@
 #include <string>
 #include "include/engine.h"
 #include "diy_map.h"
+#include <time.h>
+#include <thread>
 
 namespace polar_race {
 
@@ -15,7 +17,7 @@ namespace polar_race {
         explicit EngineRace(const std::string& dir)
                 : mu_(PTHREAD_MUTEX_INITIALIZER),
                   db_lock_(NULL), path(dir), readyForWrite(false),
-                  readyForRead(false), readyForRange(false) {
+                  readyForRead(false), readyForRange(false),_time((int64_t)time(NULL)) {
         }
 
         ~EngineRace();
@@ -62,6 +64,8 @@ namespace polar_race {
         char* bufValues;
         pthread_mutex_t* bufLock;
         int stage;
+        int64_t _time;
+        int posMark = 0;
     };
 
 }  // namespace polar_race
