@@ -57,15 +57,13 @@ namespace polar_race {
         Map* map;
         int count;
         int64_t* keys;
-        int64_t* values;
+        int16_t* values;
         int64_t* bufKeys;
         char* bufValues;
         pthread_mutex_t* bufLock;
-
-
+        int stage;
     };
 
 }  // namespace polar_race
-
 
 #endif  // ENGINE_RACE_ENGINE_RACE_H_
