@@ -230,7 +230,7 @@ namespace polar_race {
         *value = std::string(bufLocal, 4096);
         pthread_mutex_lock(&mu_);
         count += 1;
-        if (count > 1000000) {
+        if (count > 10000000) {
                     std::cout<<"byebye"<<std::endl;
                     std::exit(-1);
                 }
@@ -290,7 +290,7 @@ namespace polar_race {
                     std::cout<<keys[count]<<' '<<values[count]<<std::endl;
                 }
                 count += 1;
-                if (count > 1000000) {
+                if (count > 10000000) {
                     std::cout<<"byebye"<<std::endl;
                     std::exit(-1);
                 }
