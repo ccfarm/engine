@@ -334,6 +334,8 @@ namespace polar_race {
         if (!readyForRange) {
             ReadyForRange();
         }
+        PolarString* key;
+        PolarString* value;
         std::cout<<"6"<<std::endl;
         char *buf = new char[8];
         for (int i = 0; i < count; i++) {
@@ -369,7 +371,11 @@ namespace polar_race {
                 }
                 std::cout<<"range2"<<std::endl;
             }
-            visitor.Visit(*(new PolarString(buf, 8)), *(new PolarString(bufValues + 4096 * (i % BUFSIZE), 4096)));
+            key = new PolarString(buf, 8);
+            value = new PolarString(bufValues + 4096 * (i % BUFSIZE), 4096);
+            visitor.Visit(*key, *value);
+            delete key;
+            delete value;
         }
         return kSucc;
     }
