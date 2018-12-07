@@ -8,7 +8,7 @@
 #include "util.h"
 #include "engine_race.h"
 #include <iostream>
-#define FILENUM 256
+#define FILENUM 4096
 #define BUFSIZE 10000
 
 namespace polar_race {
