@@ -503,7 +503,9 @@ namespace polar_race {
 //                std::cout<<"readyT "<<values[i]<<std::endl;
                 visitor.Visit(*key, *value);
                 posMark.store(i);
-                //std::cout<<i<<' '<<posMark.load()<<std::endl;
+                if (i % 100000 == 0) {
+                    std::cout<<std::this_thread::get_id()<<' '<<i<<' '<<posMark.load()<<' '<<posMark2.load()<<std::endl;
+                }
                 delete key;
                 delete value;
             }
@@ -520,6 +522,9 @@ namespace polar_race {
                 key = new PolarString(buf, 8);
                 value = new PolarString(bufValues + 4096 * (i % BUFSIZE), 4096);
                 visitor.Visit(*key, *value);
+                if (i % 100000 == 0) {
+                    std::cout<<std::this_thread::get_id()<<' '<<i<<' '<<posMark.load()<<' '<<posMark2.load()<<std::endl;
+                }
                 delete key;
                 delete value;
                 //std::cout<<i<<threadId<<"threadId\n";
