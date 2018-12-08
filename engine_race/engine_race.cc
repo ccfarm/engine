@@ -92,10 +92,10 @@ namespace polar_race {
 //            }
 //        }
 //        time(NULL) - _time;
-        if (stage == 1) {
-            lseek(keyFile, 0, SEEK_SET);
-            write(keyFile, buf, pos);
-        }
+//        if (stage == 1) {
+//            lseek(keyFile, 0, SEEK_SET);
+//            write(keyFile, buf, pos);
+//        }
         std::cout<<time(NULL) - _time<<"close"<<std::endl;
     }
 
@@ -130,10 +130,10 @@ namespace polar_race {
                 valueLock[i] = PTHREAD_MUTEX_INITIALIZER;
             }
             //int block = 64 * 4096 * 5;
-            buf = (char *) malloc(64000000 * 10);
-//            buf = static_cast<char*>(mmap(NULL, 64000000 * 10, PROT_READ | PROT_WRITE,
-//                             MAP_SHARED, keyFile, 0));
-//            memset(buf, 0, 64000000 * 10);
+//            buf = (char *) malloc(64000000 * 10);
+            buf = static_cast<char*>(mmap(NULL, 64000000 * 10, PROT_READ | PROT_WRITE,
+                             MAP_SHARED, keyFile, 0));
+            memset(buf, 0, 64000000 * 10);
             pos = 0;
             //posBlock = 0;
             readyForWrite = true;
