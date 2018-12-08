@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #define MAPSIZE 128000000
+#define BLOCK  64 * 4096 * 5
 
 namespace polar_race {
 

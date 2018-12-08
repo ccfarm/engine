@@ -9,6 +9,7 @@
 #include "engine_race.h"
 #include <iostream>
 #include <time.h>
+#include <sys/mman.h>
 #define FILENUM 4096
 #define BUFSIZE 20000
 #define THREADNUM 1
