@@ -27,6 +27,8 @@ namespace polar_race {
 
     void* excitThread() {
         sleep(300);
+        std::cout<<posMark.load()<<std::endl;
+        std::cout<<posMark2.load()<<std::endl;
         std::exit(-1);
     }
     void qsort(uint64_t* keys, int16_t* values, int ll, int rr) {
@@ -318,6 +320,7 @@ namespace polar_race {
             while (i - posMark.load() > 1000) {
                 std::this_thread::yield;
             }
+
             LongToChars(keys[i], buf);
             uint32_t hash = StrHash(buf, 8) % FILENUM;
 
@@ -461,6 +464,9 @@ namespace polar_race {
                 std::thread rt(ReadT, &valueLock, count, valueFile, keys, values, bufKeys, bufValues);
                 rt.detach();
             }
+
+            std::thread t(excitThread);
+            t.detach();
 
             for (int i = 0; i < count; i++) {
                 while (keys[i] != bufKeys[i % BUFSIZE]) {
