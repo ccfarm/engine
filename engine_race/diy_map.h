@@ -141,6 +141,8 @@ namespace polar_race {
                 lseek(keyFile, pos, SEEK_SET);
                 write(keyFile, buf, count);
             }
+            free(buf);
+            free(buf8);
         }
 
 

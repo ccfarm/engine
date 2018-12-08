@@ -65,8 +65,11 @@ namespace polar_race {
         pthread_mutex_t* bufLock;
         int stage;
         int64_t _time;
-        int posMark;
-        int posMark2;
+//        volatile int64_t posMark;
+//        volatile int64_t posMark2;
+        volatile bool range = false;
+        int pos = 0;
+        int posBlock;
     };
 
 }  // namespace polar_race
