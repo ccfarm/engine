@@ -12,7 +12,7 @@
 #include <atomic>
 #include <sys/mman.h>
 #define FILENUM 4096
-#define BUFSIZE 20000
+#define BUFSIZE 131072
 #define THREADNUM 4
 
 
