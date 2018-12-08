@@ -317,7 +317,7 @@ namespace polar_race {
         while (true) {
             i = posMark2.fetch_add(1);
             if (i >= count) break;
-            std::cout<<i<<std::endl;
+            //std::cout<<i<<std::endl;
             while (i - posMark.load() > 1000) {
                 std::this_thread::yield;
             }
@@ -344,6 +344,9 @@ namespace polar_race {
 //            if (map) {
 //                delete map;
 //            }
+            if (map) {
+                delete map;
+            }
             threadId = 0;
             stage = 3;
             count = 0;
@@ -470,7 +473,23 @@ namespace polar_race {
             t.detach();
 
             for (int i = 0; i < count; i++) {
+                bool flag = true;
                 while (keys[i] != bufKeys[i % BUFSIZE]) {
+                    if (flag) {
+                        flag = false;
+                        std::cout<<i<<' '<<threadId<<' '<<posMark.load()<<"rest\n";
+                        std::cout<<keys[i]<<' '<<bufKeys[i % BUFSIZE]<<"rest\n";
+                        LongToChars(keys[i], buf);
+                        for (int j = 0; j < 8; j ++) {
+                            std::cout<<(int)buf[j]<<' ';
+                        }
+                        std::cout<<"readyT"<<std::endl;
+                        LongToChars(bufKeys[i % BUFSIZE], buf);
+                        for (int j = 0; j < 8; j ++) {
+                            std::cout<<(int)buf[j]<<' ';
+                        }
+                        std::cout<<"readyT"<<std::endl;
+                    }
 //                    pthread_mutex_lock(&mu_);
 //                    std::cout<<i<<' '<<threadId<<' '<<posMark.load()<<"rest\n";
 //                    pthread_mutex_unlock(&mu_);
