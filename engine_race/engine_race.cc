@@ -12,7 +12,7 @@
 #include <atomic>
 #include <sys/mman.h>
 #define FILENUM 4096
-#define BUFSIZE 131072
+#define BUFSIZE 131072 * 2
 #define THREADNUM 4
 
 
@@ -318,7 +318,6 @@ namespace polar_race {
             while (i - posMark.load() > 1000) {
                 std::this_thread::yield;
             }
-
             LongToChars(keys[i], buf);
             uint32_t hash = StrHash(buf, 8) % FILENUM;
 
