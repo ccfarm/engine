@@ -503,7 +503,7 @@ namespace polar_race {
 //                std::cout<<"readyT "<<values[i]<<std::endl;
                 visitor.Visit(*key, *value);
                 posMark.store(i);
-                if (i % 100000 == 0) {
+                if (i % 100 == 0) {
                     std::cout<<std::this_thread::get_id()<<' '<<i<<' '<<posMark.load()<<' '<<posMark2.load()<<std::endl;
                 }
                 delete key;
