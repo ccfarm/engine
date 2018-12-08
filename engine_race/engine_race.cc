@@ -317,6 +317,7 @@ namespace polar_race {
         while (true) {
             i = posMark2.fetch_add(1);
             if (i >= count) break;
+            std::cout<<i<<std::endl;
             while (i - posMark.load() > 1000) {
                 std::this_thread::yield;
             }
@@ -387,7 +388,7 @@ namespace polar_race {
                 }
                 std::cout<<"readyForRange "<<values[i]<<std::endl;
             }
-            bufKeys = (int64_t *)malloc(sizeof(int64_t) * BUFSIZE);
+            bufKeys =  (int64_t *)malloc(sizeof(int64_t) * BUFSIZE);
             bufValues = (char *)malloc(sizeof(char) * 4096 * BUFSIZE);
             bufLock = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * BUFSIZE);
             for (int i = 0; i < BUFSIZE; i++) {
