@@ -13,7 +13,7 @@
 #include <sys/mman.h>
 #define FILENUM 4096
 #define BUFSIZE 20000
-#define THREADNUM 1
+#define THREADNUM 4
 
 
 namespace polar_race {
