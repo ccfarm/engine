@@ -70,7 +70,7 @@ namespace polar_race {
 //        volatile int64_t posMark2;
         volatile bool range = false;
         int pos = 0;
-        int posBlock;
+        int posBlock = 0;
     };
 
 }  // namespace polar_race
