@@ -198,6 +198,7 @@ namespace polar_race {
             keyPos = 0;
             //char *keyBuf = new char[8];
             int64_t key;
+            int16_t value;
             while ((count = read(keyFile, buff, block)) > 0) {
                 int pos = 0;
                 while (pos < count) {
@@ -206,8 +207,9 @@ namespace polar_race {
 //                    }
 //                    std::cout<<"readyT1 "<<std::endl;
                     key = CharsToLong(buff + pos);
-                    if (key != 0) {
-                        map->Set(key, CharsToShort(buff + pos + 8));
+                    value = CharsToShort(buff + pos + 8);
+                    if ((key != 0) && (value != 0)) {
+                        map->Set(key, value);
                     }
                     pos += 10;
                 }
