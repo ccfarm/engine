@@ -319,7 +319,7 @@ namespace polar_race {
             if (i >= count) break;
             //std::cout<<i<<std::endl;
             while (i - posMark.load() > 1000) {
-                std::this_thread::yield;
+                //std::this_thread::yield;
             }
 
             LongToChars(keys[i], buf);
