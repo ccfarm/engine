@@ -87,12 +87,12 @@ namespace polar_race {
 
 // 2. Close engine
     EngineRace::~EngineRace() {
-//        if (valuePos) {
-//            for (int i=0; i<FILENUM; i++) {
-//                std::cout<<valuePos[i]<<std::endl;
-//                std::cout<<(int16_t)(valuePos[i]>>12)<<std::endl;
-//            }
-//        }
+       if (valuePos) {
+           for (int i=0; i<FILENUM; i++) {
+               std::cout<<valuePos[i]<<std::endl;
+               std::cout<<(int16_t)(valuePos[i]>>12)<<std::endl;
+           }
+       }
 //        time(NULL) - _time;
 //        if (stage == 1) {
 //            lseek(keyFile, 0, SEEK_SET);
