@@ -3,7 +3,7 @@
 #include "include/engine.h"
 #include <fcntl.h>
 #include <unistd.h>
-#define MAPSIZE 134217728
+#define MAPSIZE 128000000
 #define BLOCK  64 * 4096 * 5
 
 namespace polar_race {
@@ -67,7 +67,7 @@ namespace polar_race {
             //std::cout<<hash<<std::endl;
             while ((values[hash].key != key) && (values[hash].value != -1)) {
                 hash += 1;
-                if (hash == MAPSIZE) hash = 0;
+                if (hash >= MAPSIZE) hash = 0;
             }
             values[hash].key = key;
             values[hash].value = value;
@@ -92,7 +92,7 @@ namespace polar_race {
             //std::cout<<"hello";
             while ((values[hash].key != key) && (values[hash].value != -1)) {
                 hash += 1;
-                if (hash == MAPSIZE) hash = 0;
+                if (hash >= MAPSIZE) hash = 0;
             }
             return values[hash].value;
         }
