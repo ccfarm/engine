@@ -27,8 +27,8 @@ namespace polar_race {
 
     void* excitThread() {
         sleep(300);
-        std::cout<<posMark.load()<<std::endl;
-        std::cout<<posMark2.load()<<std::endl;
+        std::cout<<"posMark "<<posMark.load()<<std::endl;
+        std::cout<<"posMark2 "<<posMark2.load()<<std::endl;
         std::exit(-1);
     }
     void qsort(uint64_t* keys, int16_t* values, int ll, int rr) {
@@ -483,17 +483,17 @@ namespace polar_race {
                         for (int j = 0; j < 8; j ++) {
                             std::cout<<(int)buf[j]<<' ';
                         }
-                        std::cout<<"readyT"<<std::endl;
+                        std::cout<<"rangewait"<<std::endl;
                         LongToChars(bufKeys[i % BUFSIZE], buf);
                         for (int j = 0; j < 8; j ++) {
                             std::cout<<(int)buf[j]<<' ';
                         }
-                        std::cout<<"readyT"<<std::endl;
+                        std::cout<<"rangewait"<<std::endl;
                     }
 //                    pthread_mutex_lock(&mu_);
 //                    std::cout<<i<<' '<<threadId<<' '<<posMark.load()<<"rest\n";
 //                    pthread_mutex_unlock(&mu_);
-                    std::this_thread::yield;
+                    //std::this_thread::yield;
                 }
                 //td::cout<<keys[i];
 
@@ -523,7 +523,7 @@ namespace polar_race {
 //                std::cout<<"readyT "<<values[i]<<std::endl;
                 visitor.Visit(*key, *value);
                 posMark.store(i);
-                if (i % 100 == 0) {
+                if (i % 100000 == 0) {
                     std::cout<<std::this_thread::get_id()<<' '<<i<<' '<<posMark.load()<<' '<<posMark2.load()<<std::endl;
                 }
                 delete key;
@@ -536,7 +536,7 @@ namespace polar_race {
 //                    pthread_mutex_lock(&mu_);
 //                    std::cout<<i<<' '<<threadId<<' '<<posMark.load()<<"rest\n";
 //                    pthread_mutex_unlock(&mu_);
-                    std::this_thread::yield;
+                    //std::this_thread::yield;
                 }
                 LongToChars(keys[i], buf);
                 key = new PolarString(buf, 8);
