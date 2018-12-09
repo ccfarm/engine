@@ -87,12 +87,12 @@ namespace polar_race {
 
 // 2. Close engine
     EngineRace::~EngineRace() {
-    //    if (valuePos) {
-    //        for (int i=0; i<FILENUM; i++) {
-    //            std::cout<<valuePos[i]<<std::endl;
-    //            std::cout<<(int16_t)(valuePos[i]>>12)<<std::endl;
-    //        }
-    //    }
+//        if (valuePos) {
+//            for (int i=0; i<FILENUM; i++) {
+//                std::cout<<valuePos[i]<<std::endl;
+//                std::cout<<(int16_t)(valuePos[i]>>12)<<std::endl;
+//            }
+//        }
 //        time(NULL) - _time;
 //        if (stage == 1) {
 //            lseek(keyFile, 0, SEEK_SET);
@@ -102,7 +102,7 @@ namespace polar_race {
             lseek(keyFile, posBlock, SEEK_SET);
             write(keyFile, buf, pos);
             close(keyFile);
-            std::cout<<"close in ~EngineRace"<<std::endl;
+            std::cout<<"close in ~engineRace"<<std::endl;
         }
         std::cout<<time(NULL) - _time<<"close"<<std::endl;
     }
@@ -148,11 +148,13 @@ namespace polar_race {
         }
         //std::cout<<pos<<std::endl;
         uint32_t hash = StrHash(key.data(), 8) % FILENUM;
-
         pthread_mutex_lock(valueLock + hash);
-        lseek(valueFile[hash], valuePos[hash], SEEK_SET);
         write(valueFile[hash], value.data(), 4096);
-        //int tmp = valuePos[hash];
+        int tmp = valuePos[hash];
+        valuePos[hash] += 4096;
+        pthread_mutex_unlock(valueLock + hash);
+        //std::cout<<pos<<std::endl;
+
 
         pthread_mutex_lock(&mu_);
         //std::cout<<pos<<std::endl;
@@ -160,24 +162,21 @@ namespace polar_race {
             buf[pos + i] = key.data()[i];
         }
 
-        ShortToChars((int16_t)(valuePos[hash]>>12), buf + pos + 8);
+//        for (int j = 0; j < 8; j ++) {
+//            std::cout<<(int)buf[pos + j]<<' ';
+//        }
+//        std::cout<<pos<<"ready "<<(int16_t)(tmp>>12)<<std::endl;
+        ShortToChars((int16_t)(tmp>>12), buf + pos + 8);
         pos += 10;
         if (pos == 640000 * 10) {
             pos = 0;
             lseek(keyFile, posBlock, SEEK_SET);
             write(keyFile, buf, 640000 * 10);
+            pos = 0;
             posBlock += 640000 * 10;
             std::cout<<"posBlock "<<posBlock<<std::endl;
         }
         pthread_mutex_unlock(&mu_);
-
-
-        valuePos[hash] += 4096;
-        pthread_mutex_unlock(valueLock + hash);
-        //std::cout<<pos<<std::endl;
-
-
-
 
         pthread_mutex_lock(&mu_);
         if (count < 100) {
@@ -198,6 +197,12 @@ namespace polar_race {
     void EngineRace::ReadyForRead() {
         pthread_mutex_lock(&mu_);
         if (!readyForRead) {
+//            if ((pos > 0) && (keyFile)) {
+//                lseek(keyFile, posBlock, SEEK_SET);
+//                write(keyFile, buf, pos);
+//                close(keyFile);
+//                std::cout<<"close in readyForRead"<<std::endl;
+//            }
             int block = 64 * 4096 * 5;
             char* buff = (char *) malloc(block);
             stage = 2;
@@ -247,17 +252,17 @@ namespace polar_race {
         //std::cout<<_pos<<"short____"<<std::endl;
         if (_pos == -1) {
             pthread_mutex_lock(&mu_);
-            if (count < 100) {
+            if (count < 1000) {
                 count += 1;
                 for (int i = 0; i < 8; i++) {
                     std::cout<<(int)key[i]<<' ';
                 }
-                std::cout<<count<<" notFound"<<std::endl;
+                std::cout<<count<<" "<<_pos<<" "<<"notFound"<<std::endl;
             }
             pthread_mutex_unlock(&mu_);
+
             return kNotFound;
         }
-
         int64_t pos = _pos;
         pos <<= 12;
         //std::cout<<"mark"<<pos<<std::endl;
@@ -287,8 +292,8 @@ namespace polar_race {
 
         *value = std::string(bufLocal, 4096);
         pthread_mutex_lock(&mu_);
-        if (count < 100) {
-            count += 1;
+        count += 1;
+        if (count < 1000) {
             for (int i = 0; i < 8; i++) {
                 std::cout<<(int)key[i]<<' ';
             }
@@ -297,6 +302,9 @@ namespace polar_race {
                 std::cout<<(int)(*value)[i]<<' ';
             }
             std::cout<<"read"<<std::endl;
+        }
+        if (count % 100000  == 0) {
+            std::cout<<"read count "<<count<<std::endl;
         }
         pthread_mutex_unlock(&mu_);
 
