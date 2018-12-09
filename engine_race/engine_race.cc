@@ -83,13 +83,8 @@ namespace polar_race {
 
 // 2. Close engine
     EngineRace::~EngineRace() {
-        if (valuePos) {
-            for (int i=0; i<FILENUM; i++) {
-                std::cout<<valuePos[i]<<std::endl;
-                std::cout<<(int16_t)(valuePos[i]>>12)<<std::endl;
-            }
-        }
-        std::cout<<"close"<<std::endl;
+        std::cout<<count<<"count"<<std::endl;
+        std::cout<<time(NULL) - _time<<"close"<<std::endl;
     }
 
     void EngineRace::ReadyForWrite() {
@@ -133,17 +128,21 @@ namespace polar_race {
         uint32_t hash = StrHash(key.data(), 8) % FILENUM;
         pthread_mutex_lock(valueLock + hash);
         write(valueFile[hash], value.data(), 4096);
+
         pthread_mutex_lock(&mu_);
+        count += 1;
         write(keyFile, key.data(), 8);
         ShortToChars((int16_t)(valuePos[hash]>>12), buf);
         //std::cout<<(valuePos[hash])<<"ppppp_"<<std::endl;
         write(keyFile, buf, 2);
         pthread_mutex_unlock(&mu_);
+
         valuePos[hash] += 4096;
         pthread_mutex_unlock(valueLock + hash);
+
+
         pthread_mutex_lock(&mu_);
         if (count < 100) {
-            count += 1;
             for (int i = 0; i < 8; i++) {
                 std::cout<<(int)key[i]<<' ';
             }
@@ -273,13 +272,15 @@ namespace polar_race {
 // Therefore the following call will traverse the entire database:
 //   Range("", "", visitor)
     void EngineRace::ReadTT() {
-        char *buf = new char[8];
+        if (bufLocal == 0) {
+            bufLocal = new char[8];
+        }
         if (posMark2.load() - posMark.load() > 1000) {
             return;
         }
         int i = posMark2.fetch_add(1);
-        LongToChars(keys[i], buf);
-        uint32_t hash = StrHash(buf, 8) % FILENUM;
+        LongToChars(keys[i], bufLocal);
+        uint32_t hash = StrHash(bufLocal, 8) % FILENUM;
         pthread_mutex_lock(valueLock + hash);
         lseek(valueFile[hash], ((int64_t)values[i])<<12, SEEK_SET);
         read(valueFile[hash], bufValues + 4096 * (i % BUFSIZE), 4096);
