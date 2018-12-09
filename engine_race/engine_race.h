@@ -61,7 +61,7 @@ namespace polar_race {
         int count;
         int64_t* keys;
         int16_t* values;
-        int64_t* bufKeys;
+        volatile int64_t* bufKeys;
         char* bufValues;
         pthread_mutex_t* bufLock;
         int stage;
