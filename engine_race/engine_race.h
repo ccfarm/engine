@@ -39,6 +39,7 @@ namespace polar_race {
         void ReadyForWrite();
         void ReadyForRead();
         void ReadyForRange();
+        void ReadTT();
 
 
 

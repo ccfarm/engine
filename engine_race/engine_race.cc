@@ -27,8 +27,8 @@ namespace polar_race {
 
     void* excitThread() {
         sleep(300);
-        std::cout<<"posMark "<<posMark.load()<<std::endl;
-        std::cout<<"posMark2 "<<posMark2.load()<<std::endl;
+        std::cout<<posMark.load()<<std::endl;
+        std::cout<<posMark2.load()<<std::endl;
         std::exit(-1);
     }
     void qsort(uint64_t* keys, int16_t* values, int ll, int rr) {
@@ -316,15 +316,14 @@ namespace polar_race {
         int i;
         while (true) {
             i = posMark2.fetch_add(1);
-            if (i >= count) break;
             //std::cout<<i<<std::endl;
+            if (i >= count) break;
             while (i - posMark.load() > 1000) {
-                //std::this_thread::yield;
+                usleep(0);
             }
 
             LongToChars(keys[i], buf);
             uint32_t hash = StrHash(buf, 8) % FILENUM;
-
             pthread_mutex_lock(*valueLock + hash);
             lseek(valueFile[hash], ((int64_t)values[i])<<12, SEEK_SET);
             read(valueFile[hash], bufValues + 4096 * (i % BUFSIZE), 4096);
@@ -333,7 +332,26 @@ namespace polar_race {
             //std::cout<<'a'<<i<<' '<<keys[i]<<' '<<bufKeys[i % BUFSIZE]<<std::endl;
             //std::this_thread::yield;
         }
+
         std::cout<<"readt end\n";
+    }
+
+    void EngineRace::ReadTT() {
+        char *buf = new char[8];
+        if (posMark2.load() - posMark.load() > 1000) {
+            return;
+        }
+        int i = posMark2.fetch_add(1);
+        LongToChars(keys[i], buf);
+        uint32_t hash = StrHash(buf, 8) % FILENUM;
+        pthread_mutex_lock(valueLock + hash);
+        lseek(valueFile[hash], ((int64_t)values[i])<<12, SEEK_SET);
+        read(valueFile[hash], bufValues + 4096 * (i % BUFSIZE), 4096);
+        pthread_mutex_unlock(valueLock + hash);
+        bufKeys[i % BUFSIZE] = keys[i];
+            //std::cout<<'a'<<i<<' '<<keys[i]<<' '<<bufKeys[i % BUFSIZE]<<std::endl;
+            //std::this_thread::yield;
+
     }
 
     void EngineRace::ReadyForRange() {
@@ -391,7 +409,7 @@ namespace polar_race {
                 }
                 std::cout<<"readyForRange "<<values[i]<<std::endl;
             }
-            bufKeys =  (int64_t *)malloc(sizeof(int64_t) * BUFSIZE);
+            bufKeys = (int64_t *)malloc(sizeof(int64_t) * BUFSIZE);
             bufValues = (char *)malloc(sizeof(char) * 4096 * BUFSIZE);
             bufLock = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t) * BUFSIZE);
             for (int i = 0; i < BUFSIZE; i++) {
@@ -464,36 +482,14 @@ namespace polar_race {
         if (threadId == 0) {
             posMark2.store(0);
             posMark.store(-1);
-            for (int i = 0; i < THREADNUM; i++) {
-                std::thread rt(ReadT, &valueLock, count, valueFile, keys, values, bufKeys, bufValues);
-                rt.detach();
-            }
-
-            // std::thread t(excitThread);
-            // t.detach();
-
             for (int i = 0; i < count; i++) {
-                bool flag = true;
+                if (i > posMark.load()) {
+                    ReadTT();
+                }
                 while (keys[i] != bufKeys[i % BUFSIZE]) {
-                    if (flag) {
-                        flag = false;
-                        std::cout<<i<<' '<<threadId<<' '<<posMark.load()<<"rest\n";
-                        std::cout<<keys[i]<<' '<<bufKeys[i % BUFSIZE]<<"rest\n";
-                        LongToChars(keys[i], buf);
-                        for (int j = 0; j < 8; j ++) {
-                            std::cout<<(int)buf[j]<<' ';
-                        }
-                        std::cout<<"rangewait"<<std::endl;
-                        LongToChars(bufKeys[i % BUFSIZE], buf);
-                        for (int j = 0; j < 8; j ++) {
-                            std::cout<<(int)buf[j]<<' ';
-                        }
-                        std::cout<<"rangewait"<<std::endl;
-                    }
 //                    pthread_mutex_lock(&mu_);
 //                    std::cout<<i<<' '<<threadId<<' '<<posMark.load()<<"rest\n";
 //                    pthread_mutex_unlock(&mu_);
-                    //std::this_thread::yield;
                 }
                 //td::cout<<keys[i];
 
@@ -532,11 +528,13 @@ namespace polar_race {
             range = true;
         } else {
             for (int i = 0; i < count; i++) {
+                if (i > posMark.load()) {
+                    ReadTT();
+                }
                 while (keys[i] != bufKeys[i % BUFSIZE]) {
 //                    pthread_mutex_lock(&mu_);
 //                    std::cout<<i<<' '<<threadId<<' '<<posMark.load()<<"rest\n";
 //                    pthread_mutex_unlock(&mu_);
-                    //std::this_thread::yield;
                 }
                 LongToChars(keys[i], buf);
                 key = new PolarString(buf, 8);
@@ -562,3 +560,4 @@ namespace polar_race {
 //    }
 
 }  // namespace polar_race
+

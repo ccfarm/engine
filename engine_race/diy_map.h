@@ -50,18 +50,8 @@ namespace polar_race {
             //std::cout<<values[0].value<<std::endl;
         }
         ~Map() {
-//            Entry **next;
-//            Entry **tmp;
-//            for (int i = 0; i < MAPSIZE; i++) {
-//                Entry **next = (values + i);
-//                while (*next) {
-//                    tmp = next;
-//                    next = &((*next)->next);
-//                    delete *tmp;
-//                }
-//            }
-//            free(values);
-//            std::cout<<"free map"<<std::endl;
+            free(values);
+            std::cout<<"free map"<<std::endl;
         }
         void Set(int64_t key, int16_t value) {
             uint32_t hash = StrHash((char*)(&key), 8) % MAPSIZE;
