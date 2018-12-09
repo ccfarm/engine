@@ -111,15 +111,7 @@ namespace polar_race {
 //                keyPos = 0;
 //            }
             keyFile = open((path + "/key").c_str(), O_RDWR | O_CREAT, 0644);
-            keyPos = 0;
-            ftruncate(keyFile, 64000000 * 10);
-            char* bufff = new char[16];
-            read(keyFile, bufff, 16);
-            //lseek(keyFile, 64000000 * 10, SEEK_SET);
-//            valuePos = GetFileLength(path + "/value");
-//            if (valuePos < 0) {
-//                valuePos = 0;
-//            }
+            //keyPos = 0;
             valueFile = new int[FILENUM];
             valuePos = new int64_t[FILENUM];
             for (int i = 0; i < FILENUM; i++) {
@@ -317,7 +309,7 @@ namespace polar_race {
 //   Range("", "", visitor)
 
     void* ReadT(pthread_mutex_t** valueLock, int count,
-            int* valueFile, int64_t* keys, int16_t* values, int64_t* bufKeys,char* bufValues) {
+                int* valueFile, int64_t* keys, int16_t* values, int64_t* bufKeys,char* bufValues) {
         char *buf = new char[8];
         int i;
         while (true) {
@@ -355,8 +347,8 @@ namespace polar_race {
         read(valueFile[hash], bufValues + 4096 * (i % BUFSIZE), 4096);
         pthread_mutex_unlock(valueLock + hash);
         bufKeys[i % BUFSIZE] = keys[i];
-            //std::cout<<'a'<<i<<' '<<keys[i]<<' '<<bufKeys[i % BUFSIZE]<<std::endl;
-            //std::this_thread::yield;
+        //std::cout<<'a'<<i<<' '<<keys[i]<<' '<<bufKeys[i % BUFSIZE]<<std::endl;
+        //std::this_thread::yield;
 
     }
 
