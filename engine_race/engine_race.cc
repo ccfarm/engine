@@ -83,12 +83,13 @@ namespace polar_race {
 
 // 2. Close engine
     EngineRace::~EngineRace() {
-        if ((stage == 1) && (keyFile) && (pos > 0)) {
-            lseek(keyFile, keyPos, SEEK_SET);
-            write(keyFile, buf, pos);
-            std::cout<<"_write in ~EngineRace"<<std::endl;
+        if (valuePos) {
+            for (int i=0; i<FILENUM; i++) {
+                std::cout<<valuePos[i]<<std::endl;
+                std::cout<<(int16_t)(valuePos[i]>>12)<<std::endl;
+            }
         }
-        std::cout<<time(NULL) - _time<<" close"<<std::endl;
+        std::cout<<"close"<<std::endl;
     }
 
     void EngineRace::ReadyForWrite() {
@@ -96,10 +97,17 @@ namespace polar_race {
         if (!readyForWrite) {
             stage = 1;
             count = 0;
+//            keyPos = GetFileLength(path + "/key");
+//            if (keyPos < 0) {
+//                keyPos = 0;
+//            }
             keyFile = open((path + "/key").c_str(), O_RDWR | O_CREAT, 0644);
             keyPos = 0;
-            pos = 0;
             lseek(keyFile, keyPos, SEEK_SET);
+//            valuePos = GetFileLength(path + "/value");
+//            if (valuePos < 0) {
+//                valuePos = 0;
+//            }
             valueFile = new int[FILENUM];
             valuePos = new int64_t[FILENUM];
             for (int i = 0; i < FILENUM; i++) {
@@ -111,12 +119,11 @@ namespace polar_race {
             for (int i = 0; i < FILENUM; i++) {
                 valueLock[i] = PTHREAD_MUTEX_INITIALIZER;
             }
-            buf = (char *) malloc(WRITEBLOCK * 10);
+            buf = new char[8];
             readyForWrite = true;
         }
         pthread_mutex_unlock(&mu_);
     }
-
 
 // 3. Write a key-value pair into engine
     RetCode EngineRace::Write(const PolarString& key, const PolarString& value) {
@@ -124,31 +131,16 @@ namespace polar_race {
             ReadyForWrite();
         }
         uint32_t hash = StrHash(key.data(), 8) % FILENUM;
-
-
         pthread_mutex_lock(valueLock + hash);
         write(valueFile[hash], value.data(), 4096);
-        int tmp = valuePos[hash];
+        pthread_mutex_lock(&mu_);
+        write(keyFile, key.data(), 8);
+        ShortToChars((int16_t)(valuePos[hash]>>12), buf);
+        //std::cout<<(valuePos[hash])<<"ppppp_"<<std::endl;
+        write(keyFile, buf, 2);
+        pthread_mutex_unlock(&mu_);
         valuePos[hash] += 4096;
         pthread_mutex_unlock(valueLock + hash);
-
-
-
-        pthread_mutex_lock(&mu_);
-        memcpy(buf + pos, key.data(), 8);
-        ShortToChars((int16_t)(tmp>>12), buf + pos + 8);
-        pos += 10;
-        if (pos == WRITEBLOCK) {
-            lseek(keyFile, keyPos, SEEK_SET);
-            write(keyFile, buf, WRITEBLOCK);
-            pos = 0;
-            keyPos += WRITEBLOCK;
-            std::cout<<keyPos<<std::endl;
-        }
-        pthread_mutex_unlock(&mu_);
-
-
-
         pthread_mutex_lock(&mu_);
         if (count < 100) {
             count += 1;
@@ -174,42 +166,21 @@ namespace polar_race {
             buf = new char[8];
             keyFile = open((path + "/key").c_str(), O_RDWR | O_CREAT, 0644);
             keyPos = 0;
-
-//            char *keyBuf = new char[8];
-//            while (read(keyFile, keyBuf, 8) > 0) {
-//                count += 1;
-//                if (count % 100000 == 0){
-//                    std::cout<<count<<std::endl;
-//                }
-//                read(keyFile, buf, 2);
-//                keyPos += 10;
-//                map->Set(CharsToLong(keyBuf), CharsToShort(buf));
-//            }
-//            std::cout<<count<<std::endl;
-
-
-            int ccount;
-            int block = 64 * 1024 * 5;
-            char* buff = (char *) malloc(block);
-            while ((ccount = read(keyFile, buff, block)) > 0) {
-                //std::cout<<ccount<<std::endl;
-                int pos = 0;
-                while (pos < ccount) {
-                    map->Set(CharsToLong(buff + pos), CharsToShort(buff + pos + 8));
-                    count += 1;
-                    pos += 10;
-                    if (count % 100000 == 0){
-                        std::cout<<count<<std::endl;
-                    }
+            char *keyBuf = new char[8];
+            while (read(keyFile, keyBuf, 8) > 0) {
+                count += 1;
+                if (count % 100000 == 0){
+                    std::cout<<count<<std::endl;
                 }
+                //lseek(keyFile, keyPos, SEEK_SET);
+                read(keyFile, buf, 2);
+                //std::cout<<(int)buf[0]<<(int)buf[1]<<"short____"<<std::endl;
+                keyPos += 10;
+                map->Set(CharsToLong(keyBuf), CharsToShort(buf));
+                //std::cout<<"mark"<<CharsToLong(buf)<<std::endl;
+                //std::cout<<CharsToShort(buf)<<"short____"<<std::endl;
             }
-            free(buff);
             std::cout<<count<<std::endl;
-
-
-
-
-
             count = 0;
             valueFile = new int[FILENUM];
             for (int i = 0; i < FILENUM; i++) {
@@ -245,14 +216,30 @@ namespace polar_race {
         }
         int64_t pos = _pos;
         pos <<= 12;
+        //std::cout<<"mark"<<pos<<std::endl;
         uint32_t hash = StrHash(key.data(), 8) % FILENUM;
+//        std::cout<<"mark"<<hash<<std::endl;
         if (!bufLocal) {
+            //std::cout<<"new";
             bufLocal = new char[4096];
         }
         pthread_mutex_lock(valueLock + hash);
+//        std::cout<<"mark"<<pos<<std::endl;
         lseek(valueFile[hash], pos, SEEK_SET);
         read(valueFile[hash], bufLocal, 4096);
         pthread_mutex_unlock(valueLock + hash);
+        // for (int i = 0; i < 8; i++) {
+        //   std::cout<<buf4096[i]<<' ';
+        // }
+
+//        int tmpFile = open((path + "/value" + std::to_string(2573)).c_str(), O_RDWR | O_CREAT, 0644);
+//        char* buf4096 = new char[4096];
+//        lseek(tmpFile, 0, SEEK_SET);
+//        read(tmpFile, buf4096, 4096);
+//        for (int j = 0; j < 8; j ++) {
+//            std::cout<<(int)(buf4096[j])<<' ';
+//        }
+//        std::cout<<"range2222"<<std::endl;
 
         *value = std::string(bufLocal, 4096);
         pthread_mutex_lock(&mu_);
@@ -274,27 +261,43 @@ namespace polar_race {
         return kSucc;
     }
 
+/*
+ * NOTICE: Implement 'Range' in quarter-final,
+ *         you can skip it in preliminary.
+ */
+// 5. Applies the given Vistor::Visit function to the result
+// of every key-value pair in the key range [first, last),
+// in order
+// lower=="" is treated as a key before all keys in the database.
+// upper=="" is treated as a key after all keys in the database.
+// Therefore the following call will traverse the entire database:
+//   Range("", "", visitor)
     void EngineRace::ReadTT() {
-        if (bufLocal == 0) {
-            bufLocal = new char[8];
-        }
+        char *buf = new char[8];
         if (posMark2.load() - posMark.load() > 1000) {
             return;
         }
         int i = posMark2.fetch_add(1);
-        LongToChars(keys[i], bufLocal);
-        uint32_t hash = StrHash(bufLocal, 8) % FILENUM;
+        LongToChars(keys[i], buf);
+        uint32_t hash = StrHash(buf, 8) % FILENUM;
         pthread_mutex_lock(valueLock + hash);
         lseek(valueFile[hash], ((int64_t)values[i])<<12, SEEK_SET);
         read(valueFile[hash], bufValues + 4096 * (i % BUFSIZE), 4096);
         pthread_mutex_unlock(valueLock + hash);
         bufKeys[i % BUFSIZE] = keys[i];
+        //std::cout<<'a'<<i<<' '<<keys[i]<<' '<<bufKeys[i % BUFSIZE]<<std::endl;
+        //std::this_thread::yield;
 
     }
 
     void EngineRace::ReadyForRange() {
         pthread_mutex_lock(&mu_);
         if (!readyForRange) {
+//            std::thread et(excitThread);
+//            et.detach();
+//            if (map) {
+//                delete map;
+//            }
             if (map) {
                 delete map;
             }
@@ -362,6 +365,38 @@ namespace polar_race {
         pthread_mutex_unlock(&mu_);
     }
 
+//    void* ReadI() {
+//        if ((posMark2.load() >= count) && (posMark2.load() - posMark.load() > 1000)) {
+//            return;
+//        }
+//        int i = posMark2.fetch_add(1);
+//        //std::cout<<i<<' '<<threadId<<" 111 "<<posMark<<' '<<posMark2<<"rest\n";
+//        if (i >= count) {
+//            return;
+//        }
+//        if (bufLocal == 0) {
+//            bufLocal = new char[8];
+//        }
+//        //std::cout<<i<<' '<<threadId<<" 111 "<<posMark<<' '<<posMark2<<"rest\n";
+//        LongToChars(keys[i], bufLocal);
+//        uint32_t hash = StrHash(bufLocal, 8) % FILENUM;
+////        for (int j = 0; j < 8; j ++) {
+////            std::cout<<(int)bufLocal[j]<<' ';
+////        }
+//        //std::cout<<"readyT "<<values[i]<<std::endl;
+//        pthread_mutex_lock(valueLock + hash);
+//        lseek(valueFile[hash], ((int64_t)values[i])<<12, SEEK_SET);
+//        read(valueFile[hash], bufValues + 4096 * (i % BUFSIZE), 4096);
+//        //std::cout<<hash<<" readyT "<<values[i]<<std::endl;
+////                for (int j = 0; j < 8; j ++) {
+////                    std::cout<<(int)bufValues[4096 * (i % BUFSIZE) + j]<<' ';
+////                }
+////                std::cout<<"readyT "<<values[i]<<std::endl;
+//        pthread_mutex_unlock(valueLock + hash);
+//        bufKeys[i % BUFSIZE] = keys[i];
+//    }
+
+
     RetCode EngineRace::Range(const PolarString& lower, const PolarString& upper,
                               Visitor &visitor) {
 
@@ -372,6 +407,14 @@ namespace polar_race {
         PolarString* key;
         PolarString* value;
         char* buf = new char[8];
+//        if (threadId == -1) {
+//            pthread_mutex_lock(&mu_);
+//            threadId = threadNum;
+//            threadNum += 1;
+//            pthread_mutex_unlock(&mu_);
+//        }
+
+        //std::cout<<threadId<<"threadId\n";
         if (threadId == 0) {
             posMark2.store(0);
             posMark.store(-1);
@@ -379,10 +422,37 @@ namespace polar_race {
                 if (i > posMark.load()) {
                     ReadTT();
                 }
-                while (keys[i] != bufKeys[i % BUFSIZE]);
+                while (keys[i] != bufKeys[i % BUFSIZE]) {
+//                    pthread_mutex_lock(&mu_);
+//                    std::cout<<i<<' '<<threadId<<' '<<posMark.load()<<"rest\n";
+//                    pthread_mutex_unlock(&mu_);
+                }
+                //td::cout<<keys[i];
+
+
+//                LongToChars(keys[i], buf);
+//                uint32_t hash = StrHash(buf, 8) % FILENUM;
+////        for (int j = 0; j < 8; j ++) {
+////            std::cout<<(int)bufLocal[j]<<' ';
+////        }
+//                //std::cout<<"readyT "<<values[i]<<std::endl;
+//                lseek(valueFile[hash], ((int64_t)values[i])<<12, SEEK_SET);
+//                read(valueFile[hash], bufValues + 4096 * (i % BUFSIZE), 4096);
+//                //std::cout<<hash<<" readyT "<<values[i]<<std::endl;
+////                for (int j = 0; j < 8; j ++) {
+////                    std::cout<<(int)bufValues[4096 * (i % BUFSIZE) + j]<<' ';
+////                }
+////                std::cout<<"readyT "<<values[i]<<std::endl;
+//                bufKeys[i % BUFSIZE] = keys[i];
+
+
                 LongToChars(keys[i], buf);
                 key = new PolarString(buf, 8);
                 value = new PolarString(bufValues + 4096 * (i % BUFSIZE), 4096);
+//                for (int j = 0; j < 8; j ++) {
+//                    std::cout<<(int)bufValues[4096 * (i % BUFSIZE) + j]<<' ';
+//                }
+//                std::cout<<"readyT "<<values[i]<<std::endl;
                 visitor.Visit(*key, *value);
                 posMark.store(i);
                 if (i % 100000 == 0) {
@@ -391,12 +461,17 @@ namespace polar_race {
                 delete key;
                 delete value;
             }
+            range = true;
         } else {
             for (int i = 0; i < count; i++) {
                 if (i > posMark.load()) {
                     ReadTT();
                 }
-                while (keys[i] != bufKeys[i % BUFSIZE]);
+                while (keys[i] != bufKeys[i % BUFSIZE]) {
+//                    pthread_mutex_lock(&mu_);
+//                    std::cout<<i<<' '<<threadId<<' '<<posMark.load()<<"rest\n";
+//                    pthread_mutex_unlock(&mu_);
+                }
                 LongToChars(keys[i], buf);
                 key = new PolarString(buf, 8);
                 value = new PolarString(bufValues + 4096 * (i % BUFSIZE), 4096);
@@ -406,6 +481,8 @@ namespace polar_race {
                 }
                 delete key;
                 delete value;
+                //std::cout<<i<<threadId<<"threadId\n";
+                //std::cout<<"threadId\n";
             }
         }
         std::cout<<threadId<<' '<<count<<" done\n";
@@ -413,4 +490,9 @@ namespace polar_race {
 
         return kSucc;
     }
+//    RetCode EngineRace::Range(const PolarString& lower, const PolarString& upper,
+//                              Visitor &visitor) {
+//        return kSucc;
+//    }
+
 }  // namespace polar_race
