@@ -354,7 +354,7 @@ namespace polar_race {
                 if (i > posMark.load()) {
                     ReadTT();
                 }
-                while (keys[i] != bufKeys[i % BUFSIZE]) usleep(0);;
+                while (keys[i] != bufKeys[i % BUFSIZE]);
                 LongToChars(keys[i], buf);
                 key = new PolarString(buf, 8);
                 value = new PolarString(bufValues + 4096 * (i % BUFSIZE), 4096);
@@ -371,7 +371,7 @@ namespace polar_race {
                 if (i > posMark.load()) {
                     ReadTT();
                 }
-                while (keys[i] != bufKeys[i % BUFSIZE]) usleep(0);
+                while (keys[i] != bufKeys[i % BUFSIZE]);
                 LongToChars(keys[i], buf);
                 key = new PolarString(buf, 8);
                 value = new PolarString(bufValues + 4096 * (i % BUFSIZE), 4096);
