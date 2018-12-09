@@ -132,12 +132,12 @@ namespace polar_race {
                 valueLock[i] = PTHREAD_MUTEX_INITIALIZER;
             }
             //int block = 64 * 4096 * 5;
-//            buf = (char *) malloc(64000000 * 10);
-            buf = static_cast<char*>(mmap(NULL, 64000000 * 10, PROT_READ | PROT_WRITE,
-                             MAP_SHARED, keyFile, 0));
-            memset(buf, 0, 64000000 * 10);
+            buf = (char *) malloc(1000000 * 10);
+//            buf = static_cast<char*>(mmap(NULL, 64000000 * 10, PROT_READ | PROT_WRITE,
+//                             MAP_SHARED, keyFile, 0));
+//            memset(buf, 0, 1000000 * 10);
             pos = 0;
-            //posBlock = 0;
+            posBlock = 0;
             readyForWrite = true;
         }
         pthread_mutex_unlock(&mu_);
@@ -170,6 +170,14 @@ namespace polar_race {
 //        std::cout<<pos<<"ready "<<(int16_t)(tmp>>12)<<std::endl;
         ShortToChars((int16_t)(tmp>>12), buf + pos + 8);
         pos += 10;
+        if (pos == 1000000 * 10) {
+            pos = 0;
+            lseek(keyFile, posBlock, SEEK_SET);
+            write(keyFile, buf, 1000000 * 10);
+            pos = 0;
+            posBlock += 1000000 * 10;
+            std::cout<<"posBlock "<<posBlock<<std::endl;
+        }
         pthread_mutex_unlock(&mu_);
 
         pthread_mutex_lock(&mu_);
@@ -209,9 +217,7 @@ namespace polar_race {
 //                    }
 //                    std::cout<<"readyT1 "<<std::endl;
                     key = CharsToLong(buff + pos);
-                    if (key != 0) {
-                        map->Set(key, CharsToShort(buff + pos + 8));
-                    }
+                    map->Set(key, CharsToShort(buff + pos + 8));
                     pos += 10;
                 }
                 //std::cout<<"mark"<<CharsToLong(buf)<<std::endl;
@@ -560,4 +566,3 @@ namespace polar_race {
 //    }
 
 }  // namespace polar_race
-
