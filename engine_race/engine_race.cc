@@ -469,8 +469,8 @@ namespace polar_race {
                 rt.detach();
             }
 
-            std::thread t(excitThread);
-            t.detach();
+            // std::thread t(excitThread);
+            // t.detach();
 
             for (int i = 0; i < count; i++) {
                 bool flag = true;
