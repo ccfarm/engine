@@ -174,17 +174,42 @@ namespace polar_race {
             buf = new char[8];
             keyFile = open((path + "/key").c_str(), O_RDWR | O_CREAT, 0644);
             keyPos = 0;
-            char *keyBuf = new char[8];
-            while (read(keyFile, keyBuf, 8) > 0) {
-                count += 1;
-                if (count % 100000 == 0){
-                    std::cout<<count<<std::endl;
+
+//            char *keyBuf = new char[8];
+//            while (read(keyFile, keyBuf, 8) > 0) {
+//                count += 1;
+//                if (count % 100000 == 0){
+//                    std::cout<<count<<std::endl;
+//                }
+//                read(keyFile, buf, 2);
+//                keyPos += 10;
+//                map->Set(CharsToLong(keyBuf), CharsToShort(buf));
+//            }
+//            std::cout<<count<<std::endl;
+
+
+            int ccount;
+            int block = 64 * 1024 * 5;
+            char* buff = (char *) malloc(block);
+            while ((ccount = read(keyFile, buff, block)) > 0) {
+                //std::cout<<ccount<<std::endl;
+                int pos = 0;
+                while (pos < ccount) {
+                    map->Set(CharsToLong(buff + pos), CharsToShort(buff + pos + 8));
+                    count += 1;
+                    pos += 10;
+                    if (count % 100000 == 0){
+                        std::cout<<count<<std::endl;
+                    }
                 }
-                read(keyFile, buf, 2);
-                keyPos += 10;
-                map->Set(CharsToLong(keyBuf), CharsToShort(buf));
             }
+            free(buff);
             std::cout<<count<<std::endl;
+
+
+
+
+
             count = 0;
             valueFile = new int[FILENUM];
             for (int i = 0; i < FILENUM; i++) {
